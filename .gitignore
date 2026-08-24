@@ -1,0 +1,39 @@
+# === Common Lisp & SBCL Compilation Artifacts ===
+*.fasl
+*.lisp-temp
+*.dx64fsl
+*.dx32fsl
+*.fsl
+
+# === ASDF & Quicklisp Cache ===
+.fasl-cache/
+.quicklisp/
+
+# === Editors & IDEs ===
+# Emacs / SLIME / Sly
+*~
+\#*\#
+.#*
+.slime-history
+.sly-history
+
+# VS Code / Alive plugin
+.vscode/
+
+# JetBrains / CLion 
+.idea/
+
+# === OS Generated Files ===
+.DS_Store
+Thumbs.db
+
+# === LaTeX Build Artifacts ===
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
