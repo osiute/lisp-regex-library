@@ -26,6 +26,7 @@
   :description "Test suite for regex-library"
   :depends-on ("regex-library")
   :components ((:module "tests"
-                :components ((:file "test"))))
+                :components ((:module "parser"
+                              :components ((:file "state-test"))))))
   :perform (asdf:test-op (op c)
              (uiop:symbol-call :regex-library/tests :#run-tests)))
