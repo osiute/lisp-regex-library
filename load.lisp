@@ -3,14 +3,11 @@
 
 (push #p"./" asdf:*central-registry*) ; Включение текущей директории в диапазон поиска проектов для asdf
 
-(format t "~%[1/3] Загрузка основной системы...~%")
+(format t "~%[1/2] Загрузка основной системы...~%")
 (asdf:load-system :regex-library)
 
-(format t "~%[2/3] Загрузка тестовой системы...~%")
+(format t "~%[2/2] Загрузка тестовой системы...~%")
 (asdf:load-system :regex-library/tests)
-
-(format t "~%[3/3] Переход в пакет...~%")
-(in-package :regex-library)
 
 (format t "~%=== Проект успешно загружен! ===~%")
 (format t "Доступные тесты:~%")
@@ -18,5 +15,5 @@
 (format t "(run-unicode-tests)~%")
 (format t "(run-nfa-tests)~%")
 (format t "(run-dfa-tests)~%")
-(format t "(run-engine-tests)~%")
-(format t "~%")
+(format t "(run-engine-tests)~%~%")
+(format t "!!! НЕОБХОДИМО ПРОПИСАТЬ (in-package :regex-library) !!!~%~%")
