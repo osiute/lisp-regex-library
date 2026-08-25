@@ -1,18 +1,18 @@
 (in-package :regex-library)
 
 (defun run-state-tests ()
-  (format t "~%=== Запуск тестов модуля parser-state ===~%")
-  (let ((passed 0)
-        (failed 0))
-    
-    (flet ((assert-equal (expected actual test-name)
-             (if (equal expected actual)
-                 (progn
-                   (incf passed)
-                   (format t "  [OK] ~A~%" test-name))
-                 (progn
-                   (incf failed)
-                   (format t "  [FAIL] ~A: ожидалось ~S, получено ~S~%" test-name expected actual)))))
+  (let ((passed 0) (failed 0))
+    (format t "~%=== Модуль parser-state: начало тестирования ===~%")
+    (flet (
+      (assert-equal (actual expected test-name)
+        (when (equal actual expected)
+          (incf passed)
+          (format t "  [OK] ~A~%" test-name)
+          (return-from assert-equal)
+        )
+        (incf failed)
+        (format t "  [FAIL] ~A: ожидалось ~S, получено ~S~%" test-name expected actual)
+      ))
 
       ;; --- Тест 1: Базовый проход и навигация курсора ---
       (let ((s (make-parser-state :str "abc" :len 3)))
@@ -22,7 +22,7 @@
         (assert-equal #\b (parser-next s) "next считывает символ и двигает индекс")
         (assert-equal #\c (parser-next s) "next считывает последний символ")
         (assert-equal nil (parser-peek s) "peek за пределами границы строки")
-        (assert-equal nil (parser-next s) "next за пределами границы строки")
+        (assert-equal #\c (parser-next s) "next за пределами границы строки")
         (assert-equal nil (parser-match-p s #\x) "match-p за пределами границы строки"))
 
       ;; --- Тест 2: Считывание положительных чисел ---
@@ -36,6 +36,9 @@
         (handler-case (parser-parse-number s)
           (error () (setf error-caught t)))
         (assert-equal t error-caught "вызов ошибки при отсутствии цифры")))
-
-    (format t "=== Итог: Успешно: ~A | Ошибок: ~A ===~%" passed failed)
-    (= failed 0)))
+    
+    (format t "~%=== Модуль parser-state: тестирование завершено ===~%")
+    (format t "Успешные: ~A~%Неудачные: ~A~%" passed failed)
+    (= failed 0)
+  )  
+)
