@@ -7,7 +7,12 @@
                (:module "src"
                 :depends-on ("packages")
                 :components ((:file "ast")
-                             (:file "parser"  :depends-on ("ast"))
+                             (:module "parser"
+                              :depends-on ("ast")
+                              :components ((:file "state")
+                                           (:file "char-class" :depends-on ("state"))
+                                           (:file "grammar"    :depends-on ("state" "char-class"))
+                                           (:file "main"       :depends-on ("grammar"))))
                              (:file "unicode" :depends-on ("ast"))
                              (:file "nfa"     :depends-on ("ast" "unicode"))
                              (:file "dfa"     :depends-on ("nfa" "unicode"))
