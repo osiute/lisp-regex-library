@@ -26,7 +26,9 @@
   :description "Test suite for regex-library"
   :depends-on ("regex-library")
   :components ((:module "tests"
-                :components ((:module "parser"
+                :components (
+                  (:file "test-utils")
+                  (:module "parser"
                               :components ((:file "state-test")
                                            (:file "char-class-test" :depends-on ("state-test"))
                               )))))
