@@ -12,7 +12,25 @@
         )
         (incf failed)
         (format t "  [FAIL] ~A: ожидалось ~S, получено ~S~%" test-name expected actual)
-      ))
+      )
+      (assert-error (fn test-name)
+        (let ((error-caught nil))
+          (handler-case (funcall fn)
+            (error () (setf error-caught t))
+          )
+          (if error-caught
+            (progn
+              (incf passed)
+              (format t "  [OK] ~A~%" test-name)
+            )
+            (progn
+              (incf failed)
+              (format t "  [FAIL] ~A: ожидалась ошибка, но код выполнился~%" test-name)
+            )
+          )
+        )
+      )
+      )
 
       ;; --- Тест 1: Экранированные спецклассы \d, \w ---
       (let ((s (make-parser-state :str "\\d" :len 2)))
@@ -38,12 +56,26 @@
           (assert-equal '((#\a . #\a) (#\b . #\b) (#\c . #\c)) (ast-char-class-ranges node) "парсинг отдельных символов a, b, c")
           (assert-equal t (ast-char-class-negated-p node) "установлен флаг negated-p")))
 
-      ;; --- Тест 4: Ошибка перевернутого диапазона [z-a] ---
-      (let ((s (make-parser-state :str "[z-a]" :len 5))
-            (error-caught nil))
-        (handler-case (parse-bracket-char-class s)
-          (error () (setf error-caught t)))
-        (assert-equal t error-caught "вызов ошибки при некорректном диапазоне [z-a]")))
+      ;; --- Неправильные написания класса (Проверка обработки ошибок) ---
+      (assert-error (lambda ()
+                      (let ((s (make-parser-state :str "[z-a]" :len 5)))
+                        (parse-bracket-char-class s)))
+                    "ошибка: перевернутый диапазон [z-a]")
+
+      (assert-error (lambda ()
+                      (let ((s (make-parser-state :str "[a-z" :len 4)))
+                        (parse-bracket-char-class s)))
+                    "ошибка: незакрытая квадратная скобка [a-z")
+
+      (assert-error (lambda ()
+                      (let ((s (make-parser-state :str "\\" :len 1)))
+                        (parse-escape-char-class s)))
+                    "ошибка: обрывающаяся escape-последовательность \\")
+
+      (assert-error (lambda ()
+                      (let ((s (make-parser-state :str "[a-]" :len 4)))
+                        (parse-bracket-char-class s)))
+                    "ошибка: висячий дефис в конце диапазона [a-]"))
     
     (format t "~%=== Модуль parser/char-class: тестирование завершено ===~%")
     (format t "Успешные: ~A~%Неудачные: ~A~%" passed failed)
