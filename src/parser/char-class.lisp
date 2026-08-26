@@ -69,26 +69,19 @@
         ;; Читаем первый символ диапазона или одиночный символ
         (let ((start-char (parser-next state)))
           ;; Проверяем, задан ли диапазон через дефис (например, 'a-z')
-          (if (and (eql (parser-peek state) #\-)
-                    ;; после дефиса не стоит сразу же закрывающая скобка (класс символов не имеет вид [a-])
-                   (not (eql (char (parser-state-str state) (1+ (parser-state-index state))) #\]))) 
+          (if (eql (parser-peek state) #\-)
               (progn
                 (parser-next state) ; Пропускаем '-'
                 (let ((end-char (parser-next state)))
-                  (unless end-char
-                    (error "Синтаксическая ошибка: некорректный диапазон в позиции ~A" 
-                           (parser-state-index state))
-                   )
+                  (when (or (null end-char) (eql end-char #\]))
+                    (error "Синтаксическая ошибка: некорректный или висячий диапазон в позиции ~A"
+                          (parser-state-index state)))
                   (when (> (char-code start-char) (char-code end-char))
                     (error "Синтаксическая ошибка: неверный порядок диапазона (~A-~A) в позиции ~A"
-                           start-char end-char (parser-state-index state))
-                   )
-                  (push (cons start-char end-char) ranges)
-                 )
-               )
+                          start-char end-char (parser-state-index state)))
+                  (push (cons start-char end-char) ranges)))
               ;; Одиночный символ
-              (push (cons start-char start-char) ranges)
-           )
+              (push (cons start-char start-char) ranges))
          )
        )
      )
