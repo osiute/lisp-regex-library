@@ -27,6 +27,8 @@
   :depends-on ("regex-library")
   :components ((:module "tests"
                 :components ((:module "parser"
-                              :components ((:file "state-test"))))))
+                              :components ((:file "state-test")
+                                           (:file "char-class-test" :depends-on ("state-test"))
+                              )))))
   :perform (asdf:test-op (op c)
              (uiop:symbol-call :regex-library/tests :#run-tests)))

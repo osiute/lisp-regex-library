@@ -2,7 +2,7 @@
 
 (defun run-state-tests ()
   (let ((passed 0) (failed 0))
-    (format t "~%=== Модуль parser-state: начало тестирования ===~%")
+    (format t "~%=== Модуль parser/state: начало тестирования ===~%")
     (flet (
       (assert-equal (actual expected test-name)
         (when (equal actual expected)
@@ -22,7 +22,7 @@
         (assert-equal #\b (parser-next s) "next считывает символ и двигает индекс")
         (assert-equal #\c (parser-next s) "next считывает последний символ")
         (assert-equal nil (parser-peek s) "peek за пределами границы строки")
-        (assert-equal #\c (parser-next s) "next за пределами границы строки")
+        (assert-equal nil (parser-next s) "next за пределами границы строки")
         (assert-equal nil (parser-match-p s #\x) "match-p за пределами границы строки"))
 
       ;; --- Тест 2: Считывание положительных чисел ---
@@ -37,7 +37,7 @@
           (error () (setf error-caught t)))
         (assert-equal t error-caught "вызов ошибки при отсутствии цифры")))
     
-    (format t "~%=== Модуль parser-state: тестирование завершено ===~%")
+    (format t "~%=== Модуль parser/state: тестирование завершено ===~%")
     (format t "Успешные: ~A~%Неудачные: ~A~%" passed failed)
     (= failed 0)
   )  
