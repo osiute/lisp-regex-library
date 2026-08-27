@@ -1,5 +1,12 @@
 (in-package :regex-library)
 
+;; Вспомогательная константа и макрос для точки (всех символов Unicode).
+;; Для изменения семантики точки необходимо изменить +dot-all-chars+.
+(defparameter +dot-all-chars+ (list (cons (code-char 0) (code-char #x10FFFF))))
+(defmacro make-ast-dot ()
+  (make-ast-char-class :ranges +dot-all-chars+ :negated-p nil) 
+)
+
 ;; -----------------------------------------------------------------------------
 ;; Базовый узел AST
 ;; -----------------------------------------------------------------------------
@@ -56,12 +63,6 @@
   (min 0 :type fixnum)
   (max nil) ; nil - отсутствие верхней границы
   (child nil :type ast-node)
-)
-;; Вспомогательная константа и макрос для точки (всех символов Unicode).
-;; В будущем можно будет менять поведение точки, изменяя +dot-all-regex+.
-(defparameter +dot-all-chars+ (list (cons (code-char 0) (code-char #x10FFFF))))
-(defmacro make-ast-dot ()
-  (make-ast-char-class :ranges +dot-all-chars+ :negated-p nil) 
 )
 
 ;; -----------------------------------------------------------------------------
