@@ -6,7 +6,11 @@
   :components ((:file "packages")
                (:module "src"
                 :depends-on ("packages")
-                :components ((:file "ast")
+                :components ((:module "ast"
+                              :components ((:file "ast")
+                                           (:file "ast-printer" :depends-on ("ast"))
+                              )
+                            )
                              (:module "parser"
                               :depends-on ("ast")
                               :components ((:file "state")
