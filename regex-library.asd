@@ -10,6 +10,7 @@
                              (:module "parser"
                               :depends-on ("ast")
                               :components ((:file "state")
+                                           (:file "range-quantifier" :depends-on ("state"))
                                            (:file "char-class" :depends-on ("state"))
                                            (:file "grammar"    :depends-on ("state" "char-class"))
                                            (:file "main"       :depends-on ("grammar"))))
@@ -31,6 +32,7 @@
                   (:module "parser"
                               :components ((:file "state-test")
                                            (:file "char-class-test" :depends-on ("state-test"))
+                                           (:file "range-quantifier-test" :depends-on ("state-test"))
                               )))))
   :perform (asdf:test-op (op c)
              (uiop:symbol-call :regex-library/tests :#run-tests)))
