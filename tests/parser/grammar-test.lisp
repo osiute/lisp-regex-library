@@ -32,3 +32,46 @@
   ;; --- Негативные тесты ---
   (assert-error (lambda () (parse-regex "*")) "ошибка: квантификатор * без атома")
   (assert-error (lambda () (parse-regex "(a")) "ошибка: незакрытая скобка (a"))
+
+
+(deftest run-grammar-quantifier-tests "parser/grammar"
+  ;; Квантификатор *
+  (let ((ast (parse-regex "a*")))
+    (assert-equal (ast-star-p ast) t "узел ast-star")
+    (assert-equal (ast-literal-p (ast-star-child ast)) t "дочерний узел - литерал"))
+
+  ;; Квантификатор +
+  (let ((ast (parse-regex "b+")))
+    (assert-equal (ast-plus-p ast) t "узел ast-plus")
+    (assert-equal (ast-literal-p (ast-plus-child ast)) t "дочерний узел - литерал"))
+
+  ;; Квантификатор ?
+  (let ((ast (parse-regex "c?")))
+    (assert-equal (ast-question-p ast) t "узел ast-question")
+    (assert-equal (ast-literal-p (ast-question-child ast)) t "дочерний узел - литерал"))
+
+  ;; Диапазонный квантификатор {2,4}
+  (let ((ast (parse-regex "[0-9]{2,4}")))
+    (assert-equal (ast-range-p ast) t "узел ast-range")
+    (assert-equal (ast-range-min ast) 2 "минимум диапазона = 2")
+    (assert-equal (ast-range-max ast) 4 "максимум диапазона = 4")
+    (assert-equal (ast-char-class-p (ast-range-child ast)) t "дочерний узел - символьный класс"))
+
+  ;; Квантификатор над группой (a)*
+  (let ((ast (parse-regex "(a)*")))
+    (assert-equal (ast-star-p ast) t "звезда над группой")
+    (assert-equal (ast-literal-p (ast-star-child ast)) t "внутри группы литерал"))
+
+  ;; --- 3. Негативные тесты ---
+  
+  ;; Ошибки отсутствия атома
+  (assert-error (lambda () (parse-regex "*")) "ошибка: квантификатор * без атома")
+  (assert-error (lambda () (parse-regex "+")) "ошибка: квантификатор + без атома")
+  (assert-error (lambda () (parse-regex "?")) "ошибка: квантификатор ? без атома")
+  (assert-error (lambda () (parse-regex "{1,2}")) "ошибка: квантификатор {1,2} без атома")
+  (assert-error (lambda () (parse-regex "(a")) "ошибка: незакрытая скобка (a")
+
+  ;; Ошибки квантификации якорей
+  (assert-error (lambda () (parse-regex "^*")) "ошибка: квантификация ^* запрещена")
+  (assert-error (lambda () (parse-regex "$+")) "ошибка: квантификация $+ запрещена")
+  (assert-error (lambda () (parse-regex "^{2}")) "ошибка: квантификация ^{2} запрещена"))
