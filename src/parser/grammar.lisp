@@ -131,9 +131,31 @@
 ;; 3. Разбор конкатенаций
 (defun parse-concatenation (state)
 "Считывает последовательность квантифицированных элементов до |, ) или конца строки.
-Возвращает список элементов, обёрнутый в AST-CONCAT, либо единичный узел (без обёртки), если элемент ровно один.
+Возвращает список элементов, обёрнутый в AST-CONCAT, либо единичный узел (без обёртки), если элемент ровно один; 
+nil, если элементов нет.
 "
-  (parse-quantifier state)
+  (let ((elements nil))
+    ;; Собираем элементы в список, пока не упремся в конец, | или )
+    (do ((cur (parser-peek state) (parser-peek state)))
+        ((or (null cur)
+              (eql cur #\|)
+              (eql cur #\)))
+          ;; Завершающий блок do: переворачиваем список в правильный порядок,
+          ;; т.к. накапливали элементы через голову
+          (setf elements (nreverse elements)))
+      ;; Тело цикла
+      (push (parse-quantifier state) elements)
+    )
+
+    ;; Возвращаем результат в зависимости от количества элементов
+    (if (null elements)
+        nil
+        (if (null (rest elements))
+            (first elements)
+            (make-ast-concat :elements elements)
+        )
+      )
+    )
 )
 ;; 4. Разбор всего выражения
 (defun parse-expression (state)

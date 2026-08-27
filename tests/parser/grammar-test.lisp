@@ -75,3 +75,22 @@
   (assert-error (lambda () (parse-regex "^*")) "ошибка: квантификация ^* запрещена")
   (assert-error (lambda () (parse-regex "$+")) "ошибка: квантификация $+ запрещена")
   (assert-error (lambda () (parse-regex "^{2}")) "ошибка: квантификация ^{2} запрещена"))
+
+(deftest run-grammar-concatenation-tests "parser/grammar"
+  ;; Последовательность литералов "ab"
+  (let ((ast (parse-regex "ab")))
+    (assert-equal (ast-concat-p ast) t "узел ast-concat для 'ab'")
+    (assert-equal (length (ast-concat-elements ast)) 2 "длина списка elements = 2"))
+
+  ;; Выражение с якорями и квантификаторами "^a*b$"
+  (let ((ast (parse-regex "^a*b$")))
+    (assert-equal (ast-concat-p ast) t "узел ast-concat для '^a*b$'")
+    (assert-equal (length (ast-concat-elements ast)) 4 "4 элемента в конкатенации")
+    (assert-equal (ast-anchor-p (first (ast-concat-elements ast))) t "первый элемент - якорь ^")
+    (assert-equal (ast-star-p (second (ast-concat-elements ast))) t "второй элемент - звезда a*")
+    (assert-equal (ast-anchor-p (fourth (ast-concat-elements ast))) t "четвертый элемент - якорь $"))
+
+  ;; Глубокая вложенность скобок без создания concat
+  (let ((ast (parse-regex "((((a))))")))
+    (assert-equal (ast-literal-p ast) t "((((a)))) схлопывается в единичный литерал"))
+)

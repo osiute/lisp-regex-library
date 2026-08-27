@@ -32,7 +32,7 @@
 
 3. **parse-concatenation**
   * В цикле вызывает `parse-quantifier`, пока не встретит `|`, `)` или конец строки.
-  * Собирает полученные узлы в `make-ast-concat`.
+  * Собирает полученные узлы в `make-ast-concat`, либо возвращает nil (собрано 0 узлов) или единственный узел.
 
 4. **parse-expression**
   * Вызывает `parse-concatenation` для левой ветви.
