@@ -9,6 +9,8 @@
 (format t "~%[2/2] Загрузка тестовой системы...~%")
 (asdf:load-system :regex-library/tests)
 
+(in-package :regex-library)
+
 (defun print-help()
   (format t "Доступные тесты:~%")
   (format t "~2TParser:~%")
