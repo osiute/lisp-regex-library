@@ -21,7 +21,6 @@
   (format t "~4T(run-grammar-quantifier-tests)~%")
   (format t "~4T(run-grammar-concatenation-tests)~%")
   (format t "~4T(run-grammar-expression-tests)~%")
-  (format t "~4T(run-parser-tests)~%")
   (format t "~2TUnicode:~%")
   (format t "~2TNFA:~%")
   (format t "~2TDFA:~%")
