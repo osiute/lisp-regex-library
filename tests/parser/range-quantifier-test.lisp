@@ -1,5 +1,3 @@
-;;;; tests/parser/range-quantifier-test.lisp
-
 (in-package :regex-library)
 
 (deftest run-range-quantifier-tests "parser/range-quantifier"

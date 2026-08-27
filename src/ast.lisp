@@ -4,7 +4,7 @@
 ;; Для изменения семантики точки необходимо изменить +dot-all-chars+.
 (defparameter +dot-all-chars+ (list (cons (code-char 0) (code-char #x10FFFF))))
 (defmacro make-ast-dot ()
-  (make-ast-char-class :ranges +dot-all-chars+ :negated-p nil) 
+  `(make-ast-char-class :ranges +dot-all-chars+ :negated-p nil) 
 )
 
 ;; -----------------------------------------------------------------------------
