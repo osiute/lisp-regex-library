@@ -16,7 +16,7 @@
 (format t "~4T(run-char-class-tests)~%")
 (format t "~4T(run-range-quantifier-tests)~%")
 (format t "~4T(run-grammar-atoms-tests)~%")
-(format t "~4T(run-grammar-quantification-tests)~%")
+(format t "~4T(run-grammar-quantifier-tests)~%")
 (format t "~4T(run-grammar-concatenation-tests)~%")
 (format t "~4T(run-grammar-expression-tests)~%")
 (format t "~4T(run-parser-tests)~%")
