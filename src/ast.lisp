@@ -57,6 +57,12 @@
   (max nil) ; nil - отсутствие верхней границы
   (child nil :type ast-node)
 )
+;; Вспомогательная константа и макрос для точки (всех символов Unicode).
+;; В будущем можно будет менять поведение точки, изменяя +dot-all-regex+.
+(defparameter +dot-all-chars+ (list (cons (code-char 0) (code-char #x10FFFF))))
+(defmacro make-ast-dot ()
+  (make-ast-char-class :ranges +dot-all-chars+ :negated-p nil) 
+)
 
 ;; -----------------------------------------------------------------------------
 ;; Якоря (^, $)
