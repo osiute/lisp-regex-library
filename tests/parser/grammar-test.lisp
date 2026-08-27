@@ -94,3 +94,22 @@
   (let ((ast (parse-regex "((((a))))")))
     (assert-equal (ast-literal-p ast) t "((((a)))) схлопывается в единичный литерал"))
 )
+(deftest run-grammar-expression-tests "parser/grammar"
+  ;; Простая альтернация "a|b"
+  (let ((ast (parse-regex "a|b")))
+    (assert-equal (ast-alt-p ast) t "узел ast-alt для 'a|b'")
+    (assert-equal (ast-literal-code (ast-alt-left ast)) (char-code #\a) "левая ветвь 'a'")
+    (assert-equal (ast-literal-code (ast-alt-right ast)) (char-code #\b) "правая ветвь 'b'"))
+
+  ;; Множественная альтернация "a|b|c"
+  (let ((ast (parse-regex "a|b|c")))
+    (assert-equal (ast-alt-p ast) t "внешний ast-alt")
+    (assert-equal (ast-alt-p (ast-alt-right ast)) t "вложенный ast-alt справа"))
+
+  ;; Альтернация внутри групп с конкатенацией "^(a|b)*$"
+  (let ((ast (parse-regex "^(a|b)*$")))
+    (assert-equal (ast-concat-p ast) t "корень - ast-concat")
+    (let ((star-node (second (ast-concat-elements ast))))
+      (assert-equal (ast-star-p star-node) t "второй элемент - звезда")
+      (assert-equal (ast-alt-p (ast-star-child star-node)) t "внутри звезды - альтернация (a|b)")))
+)

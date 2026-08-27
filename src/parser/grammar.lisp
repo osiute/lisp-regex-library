@@ -162,5 +162,15 @@ nil, если элементов нет.
 "Точка входа грамматики. Считывает альтернации выражений, разделённые символом '|'.
 Возвращает дерево AST-ALT при наличии альтернаций, либо прокинутый узел нижней операции (результат parse-concatenation).
 "
-  (parse-concatenation state)
+  (let ((left (parse-concatenation state)))
+    (if (eql (parser-peek state) #\|)
+        (progn
+          (parser-next state)
+          (let ((right (parse-expression state)))
+            (make-ast-alt :left left :right right)
+           )
+         )
+        left
+     )
+   )
 )
