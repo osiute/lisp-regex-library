@@ -1,160 +1,158 @@
 (in-package :regex-library)
 
 (deftest run-grammar-atoms-tests "parser/grammar (parse-atoms)"
-  ;; --- Позитивные тесты атомов ---
+  ;; Атомы включают литералы, якоря, точку, классы и группы.
+  (test-grammar-basic-atoms #'assert-true #'assert-equal)
+  ;; Квантификатор и незакрытая группа без корректного атома дают ошибку.
+  (test-grammar-atom-errors #'assert-error))
+
+;; Проверяет типы AST и ключевые значения, создаваемые для атомов.
+(defun test-grammar-basic-atoms (assert-true-fn assert-equal-fn)
   (let ((ast (parse-regex "a")))
-    (assert-equal (ast-literal-p ast) t "литерал 'a'")
-    (assert-equal (ast-literal-char ast) #\a "код символа 'a'"))
-
+    (funcall assert-true-fn (ast-literal-p ast) "литерал 'a'")
+    (funcall assert-equal-fn (ast-literal-char ast) #\a "код символа 'a'"))
   (let ((ast (parse-regex "^")))
-    (assert-equal (ast-anchor-p ast) t "якорь ^")
-    (assert-equal (ast-anchor-type ast) :start-of-line "тип start-of-line"))
-
+    (funcall assert-true-fn (ast-anchor-p ast) "якорь ^")
+    (funcall assert-equal-fn (ast-anchor-type ast) :start-of-line
+             "тип start-of-line"))
   (let ((ast (parse-regex "$")))
-    (assert-equal (ast-anchor-p ast) t "якорь $")
-    (assert-equal (ast-anchor-type ast) :end-of-line "тип end-of-line"))
-
+    (funcall assert-true-fn (ast-anchor-p ast) "якорь $")
+    (funcall assert-equal-fn (ast-anchor-type ast) :end-of-line
+             "тип end-of-line"))
   (let ((ast (parse-regex ".")))
-    (assert-equal (ast-char-class-p ast) t "точка .")
-    (assert-equal (ast-char-class-ranges ast) +dot-all-chars+ "диапазон точки")
-    (format t "    Диапазоны точки: ~S~%" (ast-char-class-ranges ast))
-  )
-
+    (funcall assert-true-fn (ast-char-class-p ast) "точка .")
+    (funcall assert-equal-fn (ast-char-class-ranges ast) +dot-all-chars+
+             "диапазон точки")
+    (format t "    Диапазоны точки: ~S~%" (ast-char-class-ranges ast)))
   (let ((ast (parse-regex "[a-z]")))
-    (assert-equal (ast-char-class-p ast) t "символьный класс [a-z]"))
-
+    (funcall assert-true-fn (ast-char-class-p ast) "символьный класс [a-z]"))
   (let ((ast (parse-regex "\\d")))
-    (assert-equal (ast-char-class-p ast) t "экранированный класс \\d"))
-
+    (funcall assert-true-fn (ast-char-class-p ast)
+             "экранированный класс \\d"))
   (let ((ast (parse-regex "(a)")))
-    (assert-equal (ast-literal-p ast) t "скобки (a) возвращают внутренний литерал"))
+    (funcall assert-true-fn (ast-literal-p ast)
+             "скобки (a) возвращают внутренний литерал")))
 
-  ;; --- Негативные тесты ---
-  (assert-error (lambda () (parse-regex "*")) "ошибка: квантификатор * без атома")
-  (assert-error (lambda () (parse-regex "(a")) "ошибка: незакрытая скобка (a"))
-
+(defun test-grammar-atom-errors (assert-error-fn)
+  (funcall assert-error-fn
+           (lambda () (parse-regex "*"))
+           "ошибка: квантификатор * без атома")
+  (funcall assert-error-fn
+           (lambda () (parse-regex "(a"))
+           "ошибка: незакрытая скобка (a"))
 
 (deftest run-grammar-quantifier-tests "parser/grammar (parse-quantifier)"
-  ;; Квантификатор *
+  (test-grammar-quantifiers #'assert-true #'assert-equal)
+  (test-grammar-quantifier-errors #'assert-error))
+
+;; Проверяет все поддерживаемые квантификаторы и вложенные группы.
+(defun test-grammar-quantifiers (assert-true-fn assert-equal-fn)
   (let ((ast (parse-regex "a*")))
-    (assert-equal (ast-star-p ast) t "узел ast-star")
-    (assert-equal (ast-literal-p (ast-star-child ast)) t "дочерний узел - литерал"))
-
-  ;; Квантификатор +
+    (funcall assert-true-fn (ast-star-p ast) "узел ast-star")
+    (funcall assert-true-fn (ast-literal-p (ast-star-child ast))
+             "дочерний узел - литерал"))
   (let ((ast (parse-regex "b+")))
-    (assert-equal (ast-plus-p ast) t "узел ast-plus")
-    (assert-equal (ast-literal-p (ast-plus-child ast)) t "дочерний узел - литерал"))
-
-  ;; Квантификатор ?
+    (funcall assert-true-fn (ast-plus-p ast) "узел ast-plus")
+    (funcall assert-true-fn (ast-literal-p (ast-plus-child ast))
+             "дочерний узел - литерал"))
   (let ((ast (parse-regex "c?")))
-    (assert-equal (ast-question-p ast) t "узел ast-question")
-    (assert-equal (ast-literal-p (ast-question-child ast)) t "дочерний узел - литерал"))
-
-  ;; Диапазонный квантификатор {2,4}
+    (funcall assert-true-fn (ast-question-p ast) "узел ast-question")
+    (funcall assert-true-fn (ast-literal-p (ast-question-child ast))
+             "дочерний узел - литерал"))
   (let ((ast (parse-regex "[0-9]{2,4}")))
-    (assert-equal (ast-range-p ast) t "узел ast-range")
-    (assert-equal (ast-range-min ast) 2 "минимум диапазона = 2")
-    (assert-equal (ast-range-max ast) 4 "максимум диапазона = 4")
-    (assert-equal (ast-char-class-p (ast-range-child ast)) t "дочерний узел - символьный класс"))
-
-  ;; Квантификатор над группой (a)*
+    (funcall assert-true-fn (ast-range-p ast) "узел ast-range")
+    (funcall assert-equal-fn (ast-range-min ast) 2 "минимум диапазона = 2")
+    (funcall assert-equal-fn (ast-range-max ast) 4 "максимум диапазона = 4")
+    (funcall assert-true-fn (ast-char-class-p (ast-range-child ast))
+             "дочерний узел - символьный класс"))
   (let ((ast (parse-regex "(a)*")))
-    (assert-equal (ast-star-p ast) t "звезда над группой")
-    (assert-equal (ast-literal-p (ast-star-child ast)) t "внутри группы литерал"))
+    (funcall assert-true-fn (ast-star-p ast) "звезда над группой")
+    (funcall assert-true-fn (ast-literal-p (ast-star-child ast))
+             "внутри звезды литерал")))
 
-  ;; --- 3. Негативные тесты ---
-  
-  ;; Ошибки отсутствия атома
-  (assert-error (lambda () (parse-regex "*")) "ошибка: квантификатор * без атома")
-  (assert-error (lambda () (parse-regex "+")) "ошибка: квантификатор + без атома")
-  (assert-error (lambda () (parse-regex "?")) "ошибка: квантификатор ? без атома")
-  (assert-error (lambda () (parse-regex "{1,2}")) "ошибка: квантификатор {1,2} без атома")
-  (assert-error (lambda () (parse-regex "(a")) "ошибка: незакрытая скобка (a")
-
-  ;; Ошибки квантификации якорей
-  (assert-error (lambda () (parse-regex "^*")) "ошибка: квантификация ^* запрещена")
-  (assert-error (lambda () (parse-regex "$+")) "ошибка: квантификация $+ запрещена")
-  (assert-error (lambda () (parse-regex "^{2}")) "ошибка: квантификация ^{2} запрещена"))
+(defun test-grammar-quantifier-errors (assert-error-fn)
+  ;; Ошибки отсутствия атома.
+  (dolist (regex '("*" "+" "?" "{1,2}" "(a"))
+    (funcall assert-error-fn
+             (lambda () (parse-regex regex))
+             (format nil "ошибка: недопустимый квантификатор ~A" regex)))
+  ;; Якоря нельзя квантифицировать.
+  (funcall assert-error-fn (lambda () (parse-regex "^*"))
+           "ошибка: квантификация ^* запрещена")
+  (funcall assert-error-fn (lambda () (parse-regex "$+"))
+           "ошибка: квантификация $+ запрещена")
+  (funcall assert-error-fn (lambda () (parse-regex "^{2}"))
+           "ошибка: квантификация ^{2} запрещена"))
 
 (deftest run-grammar-concatenation-tests "parser/grammar (parse-concatenation)"
-  ;; Последовательность литералов "ab"
+  ;; Конкатенация сохраняет порядок элементов выражения.
+  (test-grammar-concatenation #'assert-true #'assert-equal))
+
+(defun test-grammar-concatenation (assert-true-fn assert-equal-fn)
   (let ((ast (parse-regex "ab")))
-    (assert-equal (ast-concat-p ast) t "узел ast-concat для 'ab'")
-    (assert-equal (length (ast-concat-elements ast)) 2 "длина списка elements = 2"))
-
-  ;; Выражение с якорями и квантификаторами "^a*b$"
+    (funcall assert-true-fn (ast-concat-p ast) "узел ast-concat для 'ab'")
+    (funcall assert-equal-fn (length (ast-concat-elements ast)) 2
+             "длина списка elements = 2"))
   (let ((ast (parse-regex "^a*b$")))
-    (assert-equal (ast-concat-p ast) t "узел ast-concat для '^a*b$'")
-    (assert-equal (length (ast-concat-elements ast)) 4 "4 элемента в конкатенации")
-    (assert-equal (ast-anchor-p (first (ast-concat-elements ast))) t "первый элемент - якорь ^")
-    (assert-equal (ast-star-p (second (ast-concat-elements ast))) t "второй элемент - звезда a*")
-    (assert-equal (ast-anchor-p (fourth (ast-concat-elements ast))) t "четвертый элемент - якорь $"))
-
-  ;; Глубокая вложенность скобок без создания concat
+    (funcall assert-true-fn (ast-concat-p ast)
+             "узел ast-concat для '^a*b$'")
+    (funcall assert-equal-fn (length (ast-concat-elements ast)) 4
+             "4 элемента в конкатенации")
+    (funcall assert-true-fn (ast-anchor-p (first (ast-concat-elements ast)))
+             "первый элемент - якорь ^")
+    (funcall assert-true-fn (ast-star-p (second (ast-concat-elements ast)))
+             "второй элемент - звезда a*")
+    (funcall assert-true-fn (ast-anchor-p (fourth (ast-concat-elements ast)))
+             "четвертый элемент - якорь $"))
   (let ((ast (parse-regex "((((a))))")))
-    (assert-equal (ast-literal-p ast) t "((((a)))) схлопывается в единичный литерал"))
-)
+    (funcall assert-true-fn (ast-literal-p ast)
+             "((((a)))) схлопывается в единичный литерал")))
+
 (deftest run-grammar-expression-tests "parser/grammar (parse-expression)"
-  ;; Простая альтернация "a|b"
+  (test-grammar-alternations #'assert-true #'assert-equal)
+  (test-grammar-empty-expressions #'assert-equal))
+
+(defun test-grammar-alternations (assert-true-fn assert-equal-fn)
   (let ((ast (parse-regex "a|b")))
-    (assert-equal (ast-alt-p ast) t "узел ast-alt для 'a|b'")
-    (assert-equal (ast-literal-char (ast-alt-left ast)) #\a "левая ветвь 'a'")
-    (assert-equal (ast-literal-char (ast-alt-right ast)) #\b "правая ветвь 'b'"))
-
-  ;; Множественная альтернация "a|b|c"
+    (funcall assert-true-fn (ast-alt-p ast) "узел ast-alt для 'a|b'")
+    (funcall assert-equal-fn (ast-literal-char (ast-alt-left ast)) #\a
+             "левая ветвь 'a'")
+    (funcall assert-equal-fn (ast-literal-char (ast-alt-right ast)) #\b
+             "правая ветвь 'b'"))
   (let ((ast (parse-regex "a|b|c")))
-    (assert-equal (ast-alt-p ast) t "внешний ast-alt")
-    (assert-equal (ast-alt-p (ast-alt-right ast)) t "вложенный ast-alt справа"))
-
-  ;; Альтернация внутри групп с конкатенацией "^(a|b)*$"
+    (funcall assert-true-fn (ast-alt-p ast) "внешний ast-alt")
+    (funcall assert-true-fn (ast-alt-p (ast-alt-right ast))
+             "вложенный ast-alt справа"))
   (let ((ast (parse-regex "^(a|b)*$")))
-    (assert-equal (ast-concat-p ast) t "корень - ast-concat")
+    (funcall assert-true-fn (ast-concat-p ast) "корень - ast-concat")
     (let ((star-node (second (ast-concat-elements ast))))
-      (assert-equal (ast-star-p star-node) t "второй элемент - звезда")
-      (assert-equal (ast-alt-p (ast-star-child star-node)) t "внутри звезды - альтернация (a|b)")))
-    ;; --- Тест: Пустые скобки () ---
-  (let ((s (make-parser-state :str "()" :len 2)))
-    (let ((node (parse-expression s)))
-      (assert-equal (type-of node) 'ast-empty "парсинг () дает ast-empty")
-    )
-  )
+      (funcall assert-true-fn (ast-star-p star-node) "второй элемент - звезда")
+      (funcall assert-true-fn (ast-alt-p (ast-star-child star-node))
+               "внутри звезды - альтернация (a|b)"))))
 
-  ;; --- Тест: Одиночная альтернация | ---
-  (let ((s (make-parser-state :str "|" :len 1)))
-    (let ((node (parse-expression s)))
-      (assert-equal (type-of node) 'ast-empty "парсинг одиночного | дает ast-empty")
-    )
-  )
-
-  ;; --- Тест: Альтернация с пустой правой ветвью a| ---
-  (let ((s (make-parser-state :str "a|" :len 2)))
-    (let ((node (parse-expression s)))
-      (assert-equal (type-of node) 'ast-alt "парсинг a| дает ast-alt")
-      (assert-equal (ast-literal-char (ast-alt-left node)) #\a "левая ветвь literal 'a'")
-      (assert-equal (type-of (ast-alt-right node)) 'ast-empty "правая ветвь ast-empty")
-    )
-  )
-
-  ;; --- Тест: Альтернация с пустой левой ветвью |b ---
-  (let ((s (make-parser-state :str "|b" :len 2)))
-    (let ((node (parse-expression s)))
-      (assert-equal (type-of node) 'ast-alt "парсинг |b дает ast-alt")
-      (assert-equal (type-of (ast-alt-left node)) 'ast-empty "левая ветвь ast-empty")
-      (assert-equal (ast-literal-char (ast-alt-right node)) #\b "правая ветвь literal 'b'")
-    )
-  )
-
-  ;; --- Тест: Альтернация в скобках (|) ---
-  (let ((s (make-parser-state :str "(|)" :len 3)))
-    (let ((node (parse-expression s)))
-      (assert-equal (type-of node) 'ast-empty "парсинг (|) дает ast-empty")
-    )
-  )
-
-  ;; --- Тест: Глубокая вложенность пустых скобок ((())) ---
-  (let ((s (make-parser-state :str "((()))" :len 6)))
-    (let ((node (parse-expression s)))
-      (assert-equal (type-of node) 'ast-empty "парсинг ((())) схлопывается в ast-empty")
-    )
-  )
-)
+;; Пустые ветви и пустые группы превращаются в ast-empty.
+(defun test-grammar-empty-expressions (assert-equal-fn)
+  (dolist (test-case '(("()" . "парсинг () дает ast-empty")
+                       ("|" . "парсинг одиночного | дает ast-empty")
+                       ("(|)" . "парсинг (|) дает ast-empty")
+                       ("((()))" . "парсинг ((())) схлопывается в ast-empty")))
+    (let ((node (parse-expression
+                 (make-parser-state :str (car test-case)
+                                    :len (length (car test-case))))))
+      (funcall assert-equal-fn (type-of node) 'ast-empty (cdr test-case))))
+  (let ((state (make-parser-state :str "a|" :len 2)))
+    (let ((node (parse-expression state)))
+      (funcall assert-equal-fn (type-of node) 'ast-alt
+               "парсинг a| дает ast-alt")
+      (funcall assert-equal-fn (ast-literal-char (ast-alt-left node)) #\a
+               "левая ветвь literal 'a'")
+      (funcall assert-equal-fn (type-of (ast-alt-right node)) 'ast-empty
+               "правая ветвь ast-empty")))
+  (let ((state (make-parser-state :str "|b" :len 2)))
+    (let ((node (parse-expression state)))
+      (funcall assert-equal-fn (type-of node) 'ast-alt
+               "парсинг |b дает ast-alt")
+      (funcall assert-equal-fn (type-of (ast-alt-left node)) 'ast-empty
+               "левая ветвь ast-empty")
+      (funcall assert-equal-fn (ast-literal-char (ast-alt-right node)) #\b
+               "правая ветвь literal 'b'"))))

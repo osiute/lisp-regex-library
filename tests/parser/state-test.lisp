@@ -1,29 +1,42 @@
 (in-package :regex-library)
 
 (deftest run-state-tests "parser/state"
-  ;; --- Тест 1: Базовый проход и навигация курсора ---
-  (let ((s (make-parser-state :str "abc" :len 3)))
-    (assert-equal (parser-peek s) #\a "peek на первом символе")
-    (assert-equal (parser-match-p s #\a) t "match-p совпадающего символа")
-    (assert-equal (parser-peek s) #\b "peek после сдвига")
-    (assert-equal (parser-next s) #\b "next считывает символ и двигает индекс")
-    (assert-equal (parser-next s) #\c "next считывает последний символ")
-    (assert-equal (parser-peek s) nil "peek за пределами границы строки")
-    (assert-equal (parser-next s) nil "next за пределами границы строки")
-    (assert-equal (parser-match-p s #\x) nil "match-p за пределами границы строки")
-  )
+  ;; Навигация корректно читает символы и возвращает nil за концом строки.
+  (test-parser-state-navigation #'assert-equal)
+  ;; Число считывается до первого нецифрового символа.
+  (test-parser-state-number-parsing #'assert-equal)
+  ;; Вызов parser-parse-number без цифр является синтаксической ошибкой.
+  (test-parser-state-number-error #'assert-error))
 
-  ;; --- Тест 2: Считывание положительных чисел ---
-  (let ((s (make-parser-state :str "1234abc" :len 7)))
-    (assert-equal (parser-parse-number s) 1234 "корректное считывание числа")
-    (assert-equal (parser-peek s) #\a "указатель останавливается сразу за числом")
-  )
+;; Проверяет peek, next и match-p в начале, середине и конце строки.
+(defun test-parser-state-navigation (assert-equal-fn)
+  (let ((state (make-parser-state :str "abc" :len 3)))
+    (funcall assert-equal-fn (parser-peek state) #\a "peek на первом символе")
+    (funcall assert-equal-fn (parser-match-p state #\a) t
+             "match-p совпадающего символа")
+    (funcall assert-equal-fn (parser-peek state) #\b "peek после сдвига")
+    (funcall assert-equal-fn (parser-next state) #\b
+             "next считывает первый символ после сдвига")
+    (funcall assert-equal-fn (parser-next state) #\c
+             "next считывает последний символ")
+    (funcall assert-equal-fn (parser-peek state) nil
+             "peek за пределами границы строки")
+    (funcall assert-equal-fn (parser-next state) nil
+             "next за пределами границы строки")
+    (funcall assert-equal-fn (parser-match-p state #\x) nil
+             "match-p за пределами границы строки")))
 
-  ;; --- Тест 3: Обработка синтаксической ошибки при парсинге числа ---
-  (assert-error (lambda ()
-                  (let ((s (make-parser-state :str "xyz" :len 3)))
-                    (parser-parse-number s)
-                  )
-                )
-                "вызов ошибки при отсутствии цифры")
-)
+;; Число 1234 не захватывает следующий символ 'a'.
+(defun test-parser-state-number-parsing (assert-equal-fn)
+  (let ((state (make-parser-state :str "1234abc" :len 7)))
+    (funcall assert-equal-fn (parser-parse-number state) 1234
+             "корректное считывание числа")
+    (funcall assert-equal-fn (parser-peek state) #\a
+             "указатель останавливается сразу за числом")))
+
+(defun test-parser-state-number-error (assert-error-fn)
+  (funcall assert-error-fn
+           (lambda ()
+             (parser-parse-number
+              (make-parser-state :str "xyz" :len 3)))
+           "вызов ошибки при отсутствии цифры"))
