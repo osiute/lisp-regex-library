@@ -49,3 +49,15 @@
   )
 )
 
+;; Агрегирующая функция для запуска всех тестов проекта
+(defun run-tests ()
+  (format t "~%=== Запуск всех тестов regex-library ===~%~%")
+  (run-state-tests)
+  (run-char-class-tests)
+  (run-grammar-atoms-tests)
+  (run-grammar-quantifier-tests)
+  (run-grammar-concatenation-tests)
+  (run-grammar-expression-tests)
+  (format t "~%=== Все тесты были исполнены ===~%~%")
+)
+  

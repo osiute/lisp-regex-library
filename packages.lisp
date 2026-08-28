@@ -9,5 +9,6 @@
     #:regex-find-all
     #:regex-split
     #:regex-replace-all
+    #:run-tests
   )
 )
