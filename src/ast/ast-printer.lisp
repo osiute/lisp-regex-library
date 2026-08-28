@@ -9,8 +9,8 @@
     
     (typecase node
       (ast-literal
-       (let ((code (ast-literal-code node)))
-         (format stream "AST-LITERAL '~C' (code: ~A)~%" (code-char code) code)
+       (let ((ch (ast-literal-char node)))
+         (format stream "AST-LITERAL '~C' (code: ~A)~%" ch (char-code ch))
         ))
 
       (ast-anchor

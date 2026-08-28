@@ -4,7 +4,7 @@
   ;; --- Позитивные тесты атомов ---
   (let ((ast (parse-regex "a")))
     (assert-equal (ast-literal-p ast) t "литерал 'a'")
-    (assert-equal (ast-literal-code ast) (char-code #\a) "код символа 'a'"))
+    (assert-equal (ast-literal-char ast) #\a "код символа 'a'"))
 
   (let ((ast (parse-regex "^")))
     (assert-equal (ast-anchor-p ast) t "якорь ^")
@@ -98,8 +98,8 @@
   ;; Простая альтернация "a|b"
   (let ((ast (parse-regex "a|b")))
     (assert-equal (ast-alt-p ast) t "узел ast-alt для 'a|b'")
-    (assert-equal (ast-literal-code (ast-alt-left ast)) (char-code #\a) "левая ветвь 'a'")
-    (assert-equal (ast-literal-code (ast-alt-right ast)) (char-code #\b) "правая ветвь 'b'"))
+    (assert-equal (ast-literal-char (ast-alt-left ast)) #\a "левая ветвь 'a'")
+    (assert-equal (ast-literal-char (ast-alt-right ast)) #\b "правая ветвь 'b'"))
 
   ;; Множественная альтернация "a|b|c"
   (let ((ast (parse-regex "a|b|c")))

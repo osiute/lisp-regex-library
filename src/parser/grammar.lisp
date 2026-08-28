@@ -67,7 +67,7 @@
       ;; Обычный литерал
       (t
        (let ((ch (parser-next state)))
-         (make-ast-literal :code (char-code ch))
+         (make-ast-literal :char ch)
         ))
      )
    )
