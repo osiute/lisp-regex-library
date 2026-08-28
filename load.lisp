@@ -12,7 +12,9 @@
 (in-package :regex-library)
 
 (defun print-help()
+  (format t "--------------------------------------------------~%")
   (format t "Доступные тесты:~%")
+  (format t "~4T(run-tests)~%~%")
   (format t "~2TParser:~%")
   (format t "~4T(run-state-tests)~%")
   (format t "~4T(run-char-class-tests)~%")
@@ -24,11 +26,27 @@
   (format t "~2TUnicode:~%")
   (format t "~2TNFA:~%")
   (format t "~2TDFA:~%")
-  (format t "~2TEngine (main):~%~%")
+  (format t "~2TEngine (main):~%")
+  (format t "--------------------------------------------------~%")
   (format t "Доступные команды:~%")
   (format t "~2T(parse-regex PATTERN)~%")
   (format t "~2T(print-ast-node NODE)~%")
-  (format t "~2T(print-help)~%~%")
+  (format t "~2T(papre PATTERN) — parse and print regex ~%")
+  (format t "~2T(reload) — перезагрузить load.lisp в REPL ~%")
+  (format t "~2T(print-help)~%")
+  (format t "--------------------------------------------------~%")
+)
+
+;;------------------------------------------------------------------------------
+;; сокращения
+;;------------------------------------------------------------------------------
+;; papre — parse and print regex
+(defun papre (pattern)
+  (print-ast-node (parse-regex pattern))
+)
+;; 
+(defun reload ()
+  (load "load.lisp")
 )
 
 (format t "~%=== Проект успешно загружен! ===~%")
