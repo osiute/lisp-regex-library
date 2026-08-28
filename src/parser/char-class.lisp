@@ -3,20 +3,24 @@
 (in-package :regex-library)
 
 ;; Возвращает диапазоны для спецклассов \d, \w, \s в формате ((start . end)...)
-(defun get-builtin-char-class-ranges (char-code)
-  (case char-code
-    (#\d (list (cons #\0 #\9)))
-    (#\w (list (cons #\a #\z)
+(defun get-builtin-char-class-ranges (ch)
+  (case ch
+    ((#\d #\D) (list (cons #\0 #\9)))
+    ((#\w #\W) (list (cons #\a #\z)
                (cons #\A #\Z)
                (cons #\0 #\9)
                (cons #\_ #\_)))
-    (#\s (list (cons #\Space #\Space)
+    ((#\s #\S) (list (cons #\Space #\Space)
                (cons #\Tab #\Tab)
                (cons #\Page #\Page)
                (cons (code-char 10) (code-char 10))
                (cons (code-char 13) (code-char 13))))
     (t nil)
   )
+)
+
+(defun builtin-capital-p (ch)
+  (or (eql ch #\D) (eql ch #\W) (eql ch #\S))
 )
 
 ;; Парсит экранированный спецкласс (\d, \w, \s) или обычный экранированный символ (\., \\)
@@ -28,9 +32,14 @@
              (parser-state-index state))
     )
     (let ((builtin-ranges (get-builtin-char-class-ranges escaped)))
-      (if builtin-ranges
-          (make-ast-char-class :ranges builtin-ranges :negated-p nil)
-          (make-ast-char-class :ranges (list (cons escaped escaped)) :negated-p nil)
+      (cond
+        ((and builtin-ranges (builtin-capital-p escaped))
+          (make-ast-char-class :ranges builtin-ranges :negated-p t))
+        (builtin-ranges
+          (make-ast-char-class :ranges builtin-ranges :negated-p nil))
+        (builtin-capital-p (error "parse-escape-char-class: ;; DELETE ME!!!!!!!!!!!!!!
+            Нет диапазонов для встроенной заглавной буквы. Я сделал плохую программу!"))
+        (t (make-ast-char-class :ranges (list (cons escaped escaped)) :negated-p nil))
       )
     )
   )

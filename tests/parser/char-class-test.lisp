@@ -18,6 +18,15 @@
     )
   )
 
+  (let ((s (make-parser-state :str "\\W" :len 2)))
+    (let ((node (parse-escape-char-class s)))
+      (assert-equal (ast-char-class-ranges node)
+                    '((#\a . #\z) (#\A . #\Z) (#\0 . #\9) (#\_ . #\_))
+                    "\\W дает диапазоны (a-z, A-Z, 0-9, _)")
+      (assert-equal (ast-char-class-negated-p node) t "\\W отрицательный")
+    )
+  )
+
   ;; --- Тест 2: Скобочные группы с диапазонами [a-z0-9] ---
   (let ((s (make-parser-state :str "[a-z0-9]" :len 8)))
     (let ((node (parse-bracket-char-class s)))
