@@ -6,12 +6,17 @@
   :components ((:file "packages")
                (:module "src"
                 :depends-on ("packages")
-                :components ((:file "ast")
+                :components ((:module "ast"
+                              :components ((:file "ast")
+                                           (:file "ast-printer" :depends-on ("ast"))
+                              )
+                            )
                              (:module "parser"
                               :depends-on ("ast")
                               :components ((:file "state")
+                                           (:file "range-quantifier" :depends-on ("state"))
                                            (:file "char-class" :depends-on ("state"))
-                                           (:file "grammar"    :depends-on ("state" "char-class"))
+                                           (:file "grammar"    :depends-on ("state" "char-class" "range-quantifier"))
                                            (:file "main"       :depends-on ("grammar"))))
                              (:file "unicode" :depends-on ("ast"))
                              (:file "nfa"     :depends-on ("ast" "unicode"))
@@ -31,6 +36,8 @@
                   (:module "parser"
                               :components ((:file "state-test")
                                            (:file "char-class-test" :depends-on ("state-test"))
+                                           (:file "range-quantifier-test" :depends-on ("state-test"))
+                                           (:file "grammar-test" :depends-on ("state-test"))
                               )))))
   :perform (asdf:test-op (op c)
              (uiop:symbol-call :regex-library/tests :#run-tests)))

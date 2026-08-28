@@ -18,6 +18,15 @@
     )
   )
 
+  (let ((s (make-parser-state :str "\\W" :len 2)))
+    (let ((node (parse-escape-char-class s)))
+      (assert-equal (ast-char-class-ranges node)
+                    '((#\a . #\z) (#\A . #\Z) (#\0 . #\9) (#\_ . #\_))
+                    "\\W дает диапазоны (a-z, A-Z, 0-9, _)")
+      (assert-equal (ast-char-class-negated-p node) t "\\W отрицательный")
+    )
+  )
+
   ;; --- Тест 2: Скобочные группы с диапазонами [a-z0-9] ---
   (let ((s (make-parser-state :str "[a-z0-9]" :len 8)))
     (let ((node (parse-bracket-char-class s)))
@@ -33,6 +42,36 @@
                     '((#\a . #\a) (#\b . #\b) (#\c . #\c))
                     "парсинг отдельных символов a, b, c")
       (assert-equal (ast-char-class-negated-p node) t "установлен флаг negated-p")
+    )
+  )
+
+  ;; --- Тест 4: Экранированный дефис [a\-z] ---
+  (let ((s (make-parser-state :str "[a\\-z]" :len 6)))
+    (let ((node (parse-bracket-char-class s)))
+      (assert-equal (ast-char-class-ranges node)
+                    '((#\a . #\a) (#\- . #\-) (#\z . #\z))
+                    "экранированный дефис воспринимается как три отдельных символа")
+      (assert-equal (ast-char-class-negated-p node) nil "обычный класс без отрицания")
+    )
+  )
+
+  ;; --- Тест 5: Дефис в начале класса [-az] ---
+  (let ((s (make-parser-state :str "[-az]" :len 5)))
+    (let ((node (parse-bracket-char-class s)))
+      (assert-equal (ast-char-class-ranges node)
+                    '((#\- . #\-) (#\a . #\a) (#\z . #\z))
+                    "дефис в начале класса разбирается как литерал '-'")
+      (assert-equal (ast-char-class-negated-p node) nil "обычный класс без отрицания")
+    )
+  )
+
+  ;; --- Тест 6: Дефис в конце класса [az-] ---
+  (let ((s (make-parser-state :str "[az-]" :len 5)))
+    (let ((node (parse-bracket-char-class s)))
+      (assert-equal (ast-char-class-ranges node)
+                    '((#\a . #\a) (#\z . #\z) (#\- . #\-))
+                    "дефис в конце класса разбирается как литерал '-'")
+      (assert-equal (ast-char-class-negated-p node) nil "обычный класс без отрицания")
     )
   )
 
@@ -57,11 +96,4 @@
                   )
                 )
                 "ошибка: обрывающаяся escape-последовательность \\")
-
-  (assert-error (lambda ()
-                  (let ((s (make-parser-state :str "[a-]" :len 4)))
-                    (parse-bracket-char-class s)
-                  )
-                )
-                "ошибка: висячий дефис в конце диапазона [a-]")
 )

@@ -1,5 +1,16 @@
 (in-package :regex-library)
 
+;; Вспомогательная константа и макрос для точки (всех символов Unicode кроме \n, \r).
+;; Для изменения семантики точки необходимо изменить +dot-all-chars+.
+(defparameter +dot-all-chars+
+  (list (cons (code-char 0) (code-char 9))
+        (cons (code-char 11) (code-char 12))
+        (cons (code-char 14) (code-char #x10FFFF)))
+)
+(defmacro make-ast-dot ()
+  `(make-ast-char-class :ranges +dot-all-chars+ :negated-p nil) 
+)
+
 ;; -----------------------------------------------------------------------------
 ;; Базовый узел AST
 ;; -----------------------------------------------------------------------------
@@ -10,7 +21,7 @@
 ;; -----------------------------------------------------------------------------
 ;; Узел для одиночного символа
 (defstruct (ast-literal (:include ast-node))
-  (code 0 :type fixnum)
+  (char #\Nul :type character)
 )
 
 ;; Узел символьного класса (например, [a-z0-9], \d)
@@ -64,3 +75,8 @@
 (defstruct (ast-anchor (:include ast-node))
   (type :start-of-line :type keyword) ; :start-of-line - начало строки, :end-of-line - конец строки
 )
+
+;; -----------------------------------------------------------------------------
+;; Узел пустого выражения (эпсилон)
+;; -----------------------------------------------------------------------------
+(defstruct (ast-empty (:include ast-node)))

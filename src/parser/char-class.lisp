@@ -2,90 +2,129 @@
 
 (in-package :regex-library)
 
-;; Возвращает список диапазонов для встроенных классов (\d, \w, \s).
-;; Результат имеет вид ((start.end)...).
-;; Возвращает nil, если char-code не является встроенным классом.
-(defun get-builtin-char-class-ranges (char-code)
-  (case char-code
-    (#\d (list (cons #\0 #\9)))
-    (#\w (list (cons #\a #\z)
+;; Возвращает диапазоны для спецклассов \d, \w, \s в формате ((start . end)...)
+(defun get-builtin-char-class-ranges (ch)
+  (case ch
+    ((#\d #\D) (list (cons #\0 #\9)))
+    ((#\w #\W) (list (cons #\a #\z)
                (cons #\A #\Z)
                (cons #\0 #\9)
                (cons #\_ #\_)))
-    (#\s (list (cons #\Space #\Space)
+    ((#\s #\S) (list (cons #\Space #\Space)
                (cons #\Tab #\Tab)
                (cons #\Page #\Page)
-               (cons (code-char 10) (code-char 10))   ; \n
-               (cons (code-char 13) (code-char 13)))) ; \r
+               (cons (code-char 10) (code-char 10))
+               (cons (code-char 13) (code-char 13))))
     (t nil)
-   )
+  )
 )
 
-;; Парсит встроенный класс (\d, \w, \s) или символ экранирования (\., \\ и т.д.)
-;; Вызывается, когда текущий символ — '\'
+(defun builtin-capital-p (ch)
+  (or (eql ch #\D) (eql ch #\W) (eql ch #\S))
+)
+
+;; Парсит экранированный спецкласс (\d, \w, \s) или обычный экранированный символ (\., \\)
 (defun parse-escape-char-class (state)
-  (parser-next state) ; Пропускаем '\'
+  (parser-next state) ; пропускаем '\'
   (let ((escaped (parser-next state)))
     (unless escaped
-      (error "Синтаксическая ошибка: незавершённая escape-последовательность в позиции ~A" 
+      (error "Синтаксическая ошибка: незавершённая escape-последовательность в позиции ~A"
              (parser-state-index state))
-     )
+    )
     (let ((builtin-ranges (get-builtin-char-class-ranges escaped)))
-      (if builtin-ranges
-          (make-ast-char-class :ranges builtin-ranges :negated-p nil)
-          ;; Если это не \d, \w, \s — воспринимаем как обычный экранированный символ
-          (make-ast-char-class :ranges (list (cons escaped escaped)) :negated-p nil)
-       )
-     )
-   )
+      (cond
+        ((and builtin-ranges (builtin-capital-p escaped))
+          (make-ast-char-class :ranges builtin-ranges :negated-p t))
+        (builtin-ranges
+          (make-ast-char-class :ranges builtin-ranges :negated-p nil))
+        (builtin-capital-p (error "parse-escape-char-class: ;; DELETE ME!!!!!!!!!!!!!!
+            Нет диапазонов для встроенной заглавной буквы. Я сделал плохую программу!"))
+        (t (make-ast-char-class :ranges (list (cons escaped escaped)) :negated-p nil))
+      )
+    )
+  )
 )
 
-;; Парсит класс символов в квадратных скобках: [a-z0-9] или [^abc]
-;; Вызывается, когда текущий символ — '['
+;; Считывает следующий символ внутри [...] с учётом экранирования (\- -> -)
+(defun parse-bracket-char (state)
+  (let ((ch (parser-next state)))
+    (if (and (eql ch #\\) (parser-peek state))
+        (parser-next state) ; пропускаем '\' и берем экранированный символ
+        ch
+    )
+  )
+)
+
+;; Завершает разбор диапазона 'start-char - end-char' и валидирует границы
+(defun parse-bracket-range-end (state start-char)
+  (parser-next state) ; пропускаем '-'
+  (let ((end-char (parse-bracket-char state)))
+    (unless end-char
+      (error "Синтаксическая ошибка: незакрытый символьный класс в позиции ~A"
+             (parser-state-index state))
+    )
+    (when (> (char-code start-char) (char-code end-char))
+      (error "Синтаксическая ошибка: неверный порядок диапазона (~A-~A) в позиции ~A"
+             start-char end-char (parser-state-index state))
+    )
+    (cons start-char end-char)
+  )
+)
+
+;; Предикат: является ли дефис литералом (в начале класса или перед ']')
+(defun hyphen-literal-p (cur ranges state)
+  (and (eql cur #\-)
+       (or (null ranges)
+           (eql (parser-peek state) #\])))
+)
+
+;; Считывает один элемент внутри [...] — литеральный дефис, диапазон или одиночный символ
+(defun parse-bracket-element (state ranges)
+  (let ((cur (parser-peek state)))
+    (if (hyphen-literal-p cur ranges state)
+        (progn
+          (parser-next state)
+          (cons #\- #\-))
+        (let ((start-char (parse-bracket-char state)))
+          ;; Проверяем, идет ли следом '-' и не закрывается ли сразу класс ']'
+          (if (and (eql (parser-peek state) #\-)
+                   (not (eql (char-at-offset state 1) #\])))
+              (parse-bracket-range-end state start-char)
+              (cons start-char start-char)
+          )
+        )
+    )
+  )
+)
+
+;; Безопасное получение символа из строки со смещением от текущего индекса
+(defun char-at-offset (state offset)
+  (let ((idx (+ (parser-state-index state) offset)))
+    (if (< idx (parser-state-len state))
+        (char (parser-state-str state) idx)
+        nil
+    )
+  )
+)
+
+;; Главная функция: парсит скобочную группу [a-z0-9] или [^abc]
 (defun parse-bracket-char-class (state)
-  (parser-next state) ; Пропускаем '['
-  (let ((negated nil)
+  (parser-next state) ; пропускаем '['
+  (let ((negated (parser-match-p state #\^))
         (ranges nil))
-    
-    ;; Проверяем отрицание '^'
-    (when (parser-match-p state #\^)
-      (setf negated t)
-     )
-    
     (loop
       (let ((cur (parser-peek state)))
-        ;; Ошибка: строка закончилась, скобка не закрыта
         (unless cur
-          (error "Синтаксическая ошибка: незакрытый символьный класс '[' в позиции ~A" 
+          (error "Синтаксическая ошибка: незакрытый символьный класс '[' в позиции ~A"
                  (parser-state-index state))
-         )
-        
-        ;; Условие выхода: встретили закрывающую скобку ']'
+        )
         (when (eql cur #\])
-          (parser-next state)
+          (parser-next state) ; пропускаем ']'
           (return)
-         )
-        
-        ;; Читаем первый символ диапазона или одиночный символ
-        (let ((start-char (parser-next state)))
-          ;; Проверяем, задан ли диапазон через дефис (например, 'a-z')
-          (if (eql (parser-peek state) #\-)
-              (progn
-                (parser-next state) ; Пропускаем '-'
-                (let ((end-char (parser-next state)))
-                  (when (or (null end-char) (eql end-char #\]))
-                    (error "Синтаксическая ошибка: некорректный или висячий диапазон в позиции ~A"
-                          (parser-state-index state)))
-                  (when (> (char-code start-char) (char-code end-char))
-                    (error "Синтаксическая ошибка: неверный порядок диапазона (~A-~A) в позиции ~A"
-                          start-char end-char (parser-state-index state)))
-                  (push (cons start-char end-char) ranges)))
-              ;; Одиночный символ
-              (push (cons start-char start-char) ranges))
-         )
-       )
-     )
-    
+        )
+        (push (parse-bracket-element state ranges) ranges)
+      )
+    )
     (make-ast-char-class :ranges (nreverse ranges) :negated-p negated)
-   )
+  )
 )
