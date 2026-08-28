@@ -56,6 +56,10 @@
        (format stream "AST-ALT~%")
        (print-ast-node (ast-alt-left node) :prefix child-prefix :last-p nil :stream stream)
        (print-ast-node (ast-alt-right node) :prefix child-prefix :last-p t :stream stream))
+      
+      (ast-empty
+       (format stream "AST-EMPTY~%")
+      )
 
       (t
        (format stream "UNKNOWN-NODE: ~A~%" node))

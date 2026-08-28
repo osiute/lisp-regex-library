@@ -161,16 +161,28 @@ nil, если элементов нет.
 (defun parse-expression (state)
 "Точка входа грамматики. Считывает альтернации выражений, разделённые символом '|'.
 Возвращает дерево AST-ALT при наличии альтернаций, либо прокинутый узел нижней операции (результат parse-concatenation).
+Может вернуть AST-EMPTY (эпсилон) или AST-ALT с ребёнком AST-EMPTY.
 "
   (let ((left (parse-concatenation state)))
+    (when (null left)
+      (setf left (make-ast-empty))
+    )
     (if (eql (parser-peek state) #\|)
         (progn
           (parser-next state)
           (let ((right (parse-expression state)))
-            (make-ast-alt :left left :right right)
+            (make-smart-alt left right)
            )
          )
         left
      )
    )
+)
+
+;; Создаёт ast-alt или сворачивает (ast-empty | ast-empty) в ast-empty
+(defun make-smart-alt (left right)
+  (if (and (ast-empty-p left) (ast-empty-p right))
+      left
+      (make-ast-alt :left left :right right)
+  )
 )

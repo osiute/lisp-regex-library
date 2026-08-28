@@ -1,6 +1,6 @@
 (in-package :regex-library)
 
-(deftest run-grammar-atoms-tests "parser/grammar"
+(deftest run-grammar-atoms-tests "parser/grammar (parse-atoms)"
   ;; --- Позитивные тесты атомов ---
   (let ((ast (parse-regex "a")))
     (assert-equal (ast-literal-p ast) t "литерал 'a'")
@@ -34,7 +34,7 @@
   (assert-error (lambda () (parse-regex "(a")) "ошибка: незакрытая скобка (a"))
 
 
-(deftest run-grammar-quantifier-tests "parser/grammar"
+(deftest run-grammar-quantifier-tests "parser/grammar (parse-quantifier)"
   ;; Квантификатор *
   (let ((ast (parse-regex "a*")))
     (assert-equal (ast-star-p ast) t "узел ast-star")
@@ -76,7 +76,7 @@
   (assert-error (lambda () (parse-regex "$+")) "ошибка: квантификация $+ запрещена")
   (assert-error (lambda () (parse-regex "^{2}")) "ошибка: квантификация ^{2} запрещена"))
 
-(deftest run-grammar-concatenation-tests "parser/grammar"
+(deftest run-grammar-concatenation-tests "parser/grammar (parse-concatenation)"
   ;; Последовательность литералов "ab"
   (let ((ast (parse-regex "ab")))
     (assert-equal (ast-concat-p ast) t "узел ast-concat для 'ab'")
@@ -94,7 +94,7 @@
   (let ((ast (parse-regex "((((a))))")))
     (assert-equal (ast-literal-p ast) t "((((a)))) схлопывается в единичный литерал"))
 )
-(deftest run-grammar-expression-tests "parser/grammar"
+(deftest run-grammar-expression-tests "parser/grammar (parse-expression)"
   ;; Простая альтернация "a|b"
   (let ((ast (parse-regex "a|b")))
     (assert-equal (ast-alt-p ast) t "узел ast-alt для 'a|b'")
@@ -112,4 +112,49 @@
     (let ((star-node (second (ast-concat-elements ast))))
       (assert-equal (ast-star-p star-node) t "второй элемент - звезда")
       (assert-equal (ast-alt-p (ast-star-child star-node)) t "внутри звезды - альтернация (a|b)")))
+    ;; --- Тест: Пустые скобки () ---
+  (let ((s (make-parser-state :str "()" :len 2)))
+    (let ((node (parse-expression s)))
+      (assert-equal (type-of node) 'ast-empty "парсинг () дает ast-empty")
+    )
+  )
+
+  ;; --- Тест: Одиночная альтернация | ---
+  (let ((s (make-parser-state :str "|" :len 1)))
+    (let ((node (parse-expression s)))
+      (assert-equal (type-of node) 'ast-empty "парсинг одиночного | дает ast-empty")
+    )
+  )
+
+  ;; --- Тест: Альтернация с пустой правой ветвью a| ---
+  (let ((s (make-parser-state :str "a|" :len 2)))
+    (let ((node (parse-expression s)))
+      (assert-equal (type-of node) 'ast-alt "парсинг a| дает ast-alt")
+      (assert-equal (ast-literal-char (ast-alt-left node)) #\a "левая ветвь literal 'a'")
+      (assert-equal (type-of (ast-alt-right node)) 'ast-empty "правая ветвь ast-empty")
+    )
+  )
+
+  ;; --- Тест: Альтернация с пустой левой ветвью |b ---
+  (let ((s (make-parser-state :str "|b" :len 2)))
+    (let ((node (parse-expression s)))
+      (assert-equal (type-of node) 'ast-alt "парсинг |b дает ast-alt")
+      (assert-equal (type-of (ast-alt-left node)) 'ast-empty "левая ветвь ast-empty")
+      (assert-equal (ast-literal-char (ast-alt-right node)) #\b "правая ветвь literal 'b'")
+    )
+  )
+
+  ;; --- Тест: Альтернация в скобках (|) ---
+  (let ((s (make-parser-state :str "(|)" :len 3)))
+    (let ((node (parse-expression s)))
+      (assert-equal (type-of node) 'ast-empty "парсинг (|) дает ast-empty")
+    )
+  )
+
+  ;; --- Тест: Глубокая вложенность пустых скобок ((())) ---
+  (let ((s (make-parser-state :str "((()))" :len 6)))
+    (let ((node (parse-expression s)))
+      (assert-equal (type-of node) 'ast-empty "парсинг ((())) схлопывается в ast-empty")
+    )
+  )
 )
