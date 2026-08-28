@@ -40,52 +40,68 @@
    )
 )
 
+;; Проверяет наличие отрицания '^' в начале класса.
+(defun parse-bracket-char-class-negated-p (state)
+  (parser-match-p state #\^)
+)
+
+;; Парсит одиночный символ или текущий диапазон внутри скобочного класса.
+;; Возвращает диапазоны в формате (CONS...), 
+;; т.к. в случае парсинга диапазона вида [a-] нужно вернуть отдельные диапазоны для a и -.
+(defun parse-bracket-char-class-range (state)
+  (let ((start-char (parser-next state)))
+    (if (eql (parser-peek state) #\-)
+        (progn
+          (parser-next state) ; Пропускаем '-', должны оказаться на правом символе диапазона или ']'
+          (let ((end-char (parser-peek state)))
+            (when (null end-char) ; Конец строки при незакрытом диапазоне (например, [asd-)
+              (error "Синтаксическая ошибка: некорректный или висячий диапазон в позиции ~A"
+                     (parser-state-index state)
+              )
+            )
+            (when (eql end-char #\]) ; В данном случае '-' — одиночный символ (например, [a-])
+              (return-from parse-bracket-char-class-range `(,(cons #\- #\-) ,(cons start-char start-char)))
+            )
+            (when (> (char-code start-char) (char-code end-char))
+              (error "Синтаксическая ошибка: неверный порядок диапазона (~A-~A) в позиции ~A"
+                     start-char end-char (parser-state-index state)
+              )
+            )
+            (parser-next state)
+            `(,(cons start-char end-char))
+          )
+        )
+        ;; Одиночный символ
+        `(,(cons start-char start-char))
+    )
+  )
+)
+
 ;; Парсит класс символов в квадратных скобках: [a-z0-9] или [^abc]
 ;; Вызывается, когда текущий символ — '['
 (defun parse-bracket-char-class (state)
   (parser-next state) ; Пропускаем '['
-  (let ((negated nil)
+  (let ((negated (parse-bracket-char-class-negated-p state))
         (ranges nil))
-    
-    ;; Проверяем отрицание '^'
-    (when (parser-match-p state #\^)
-      (setf negated t)
-     )
-    
     (loop
       (let ((cur (parser-peek state)))
-        ;; Ошибка: строка закончилась, скобка не закрыта
+        ;; Закончилась строка при незакрытой скобке
         (unless cur
-          (error "Синтаксическая ошибка: незакрытый символьный класс '[' в позиции ~A" 
+          (error "Синтаксическая ошибка: незакрытый символьный класс '[' в позиции ~A"
                  (parser-state-index state))
-         )
-        
+        )
         ;; Условие выхода: встретили закрывающую скобку ']'
         (when (eql cur #\])
           (parser-next state)
           (return)
-         )
-        
-        ;; Читаем первый символ диапазона или одиночный символ
-        (let ((start-char (parser-next state)))
-          ;; Проверяем, задан ли диапазон через дефис (например, 'a-z')
-          (if (eql (parser-peek state) #\-)
-              (progn
-                (parser-next state) ; Пропускаем '-'
-                (let ((end-char (parser-next state)))
-                  (when (or (null end-char) (eql end-char #\]))
-                    (error "Синтаксическая ошибка: некорректный или висячий диапазон в позиции ~A"
-                          (parser-state-index state)))
-                  (when (> (char-code start-char) (char-code end-char))
-                    (error "Синтаксическая ошибка: неверный порядок диапазона (~A-~A) в позиции ~A"
-                          start-char end-char (parser-state-index state)))
-                  (push (cons start-char end-char) ranges)))
-              ;; Одиночный символ
-              (push (cons start-char start-char) ranges))
-         )
-       )
-     )
-    
+        )
+        ;; Иначе добавляем полученные диапазоны. 
+        ;; parse-bracket-char-class-range вернула диапазоны в формате (CONS...)
+        (let ((ranges-to-add (parse-bracket-char-class-range state)))
+          (setq ranges (nconc ranges-to-add ranges))
+        )
+      )
+    )
     (make-ast-char-class :ranges (nreverse ranges) :negated-p negated)
-   )
+  )
 )

@@ -36,6 +36,16 @@
     )
   )
 
+  ;; --- Тест 4: Дефис в конце [^a-] ---
+  (let ((s (make-parser-state :str "[^a-]" :len 5)))
+    (let ((node (parse-bracket-char-class s)))
+      (assert-equal (ast-char-class-ranges node)
+                    '((#\a . #\a) (#\- . #\-))
+                    "[^a-]: дефис в конце диапазона воспринимается как символ")
+      (assert-equal (ast-char-class-negated-p node) t "[^a-]: установлен флаг negated-p")
+    )
+  )
+
   ;; --- Проверка обработки ошибок (неправильного задания классов символов) ---
   (assert-error (lambda ()
                   (let ((s (make-parser-state :str "[z-a]" :len 5)))
@@ -57,11 +67,4 @@
                   )
                 )
                 "ошибка: обрывающаяся escape-последовательность \\")
-
-  (assert-error (lambda ()
-                  (let ((s (make-parser-state :str "[a-]" :len 4)))
-                    (parse-bracket-char-class s)
-                  )
-                )
-                "ошибка: висячий дефис в конце диапазона [a-]")
 )
