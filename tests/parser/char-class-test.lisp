@@ -36,13 +36,33 @@
     )
   )
 
-  ;; --- Тест 4: Дефис в конце [^a-] ---
-  (let ((s (make-parser-state :str "[^a-]" :len 5)))
+  ;; --- Тест 4: Экранированный дефис [a\-z] ---
+  (let ((s (make-parser-state :str "[a\\-z]" :len 6)))
     (let ((node (parse-bracket-char-class s)))
       (assert-equal (ast-char-class-ranges node)
-                    '((#\a . #\a) (#\- . #\-))
-                    "[^a-]: дефис в конце диапазона воспринимается как символ")
-      (assert-equal (ast-char-class-negated-p node) t "[^a-]: установлен флаг negated-p")
+                    '((#\a . #\a) (#\- . #\-) (#\z . #\z))
+                    "экранированный дефис воспринимается как три отдельных символа")
+      (assert-equal (ast-char-class-negated-p node) nil "обычный класс без отрицания")
+    )
+  )
+
+  ;; --- Тест 5: Дефис в начале класса [-az] ---
+  (let ((s (make-parser-state :str "[-az]" :len 5)))
+    (let ((node (parse-bracket-char-class s)))
+      (assert-equal (ast-char-class-ranges node)
+                    '((#\- . #\-) (#\a . #\a) (#\z . #\z))
+                    "дефис в начале класса разбирается как литерал '-'")
+      (assert-equal (ast-char-class-negated-p node) nil "обычный класс без отрицания")
+    )
+  )
+
+  ;; --- Тест 6: Дефис в конце класса [az-] ---
+  (let ((s (make-parser-state :str "[az-]" :len 5)))
+    (let ((node (parse-bracket-char-class s)))
+      (assert-equal (ast-char-class-ranges node)
+                    '((#\a . #\a) (#\z . #\z) (#\- . #\-))
+                    "дефис в конце класса разбирается как литерал '-'")
+      (assert-equal (ast-char-class-negated-p node) nil "обычный класс без отрицания")
     )
   )
 
