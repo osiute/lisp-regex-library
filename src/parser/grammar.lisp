@@ -115,12 +115,8 @@
            (error "Синтаксическая ошибка: диапазонный квантификатор не может применяться к якорю в позиции ~A"
                   (parser-state-index state))
           )
-         (let ((range (parse-range-quantifier state)))
-           (make-ast-range :min (car range)
-                           :max (cdr range)
-                           :child node
-            )
-          ))
+          (make-ast-range-or-empty state node)
+         )
 
         ;; 5. Квантификатор отсутствует
         (t node)
@@ -128,6 +124,23 @@
      )
    )
 )
+
+(defun make-ast-range-or-empty (state node)
+  (let* ((range (parse-range-quantifier state))
+         (min (first range)) (max (rest range)))
+    (assert min () 
+          "МОЯ ОШИБКА, сюда nil не должен попасть: make-ast-range-or-empty: (null min) в позиции ~A"
+           (parser-state-index state))
+    (if (and max (= max min 0))
+      (make-ast-empty)
+      (make-ast-range :min min
+                      :max max
+                      :child node
+      )
+    )
+  )
+)
+
 ;; 3. Разбор конкатенаций
 (defun parse-concatenation (state)
 "Считывает последовательность квантифицированных элементов до |, ) или конца строки.

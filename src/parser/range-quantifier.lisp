@@ -85,7 +85,7 @@
 
 (defun validate-range (min-val max-val state)
   (when (null min-val)
-    (error "МОЯ ОШИБКА, сюда min-val не должно было пройти: (null min-val) в позиции ~A"
+    (error "МОЯ ОШИБКА, сюда min-val не должно было пройти: validate-range: (null min-val) в позиции ~A"
            (parser-state-index state)
     )
   )
