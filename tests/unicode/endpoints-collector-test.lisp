@@ -16,7 +16,7 @@
 (defun test-endpoints-empty (assert-true-fn assert-equal-fn)
   (let ((set (extract-endpoints-from-ast nil)))
     (funcall assert-true-fn (endpoint-present-p set 0) "пустое AST: база 0")
-    (funcall assert-true-fn (endpoint-present-p set #x110000) "пустое AST: база #x110000")
+    (funcall assert-true-fn (endpoint-present-p set (1+ +max-unicode+)) "пустое AST: база (1+ +max-unicode+)")
     (funcall assert-equal-fn (hash-table-count set) 2 "пустое AST: ровно 2 точки")))
 
 (defun test-endpoints-literal (assert-true-fn)
@@ -47,11 +47,11 @@
 ;; Символы на границах диапазонов Unicode (U+0000 и U+10FFFF)
 (defun test-endpoints-unicode-boundaries (assert-true-fn)
   (let ((char-min (code-char 0))
-        (char-max (code-char #x10FFFF)))
+        (char-max (code-char +max-unicode+)))
     (let ((ast (make-ast-char-class :ranges `((,char-min . ,char-max)))))
       (let ((set (extract-endpoints-from-ast ast)))
         (funcall assert-true-fn (endpoint-present-p set 0) "unicode: мин граница (0)")
-        (funcall assert-true-fn (endpoint-present-p set #x110000) "unicode: макс граница (#x110000)")))))
+        (funcall assert-true-fn (endpoint-present-p set (1+ +max-unicode+)) "unicode: макс граница ((1+ +max-unicode+))")))))
 
 (defun test-endpoints-star (assert-true-fn)
   (let ((ast (make-ast-star :child (make-ast-literal :char #\z))))

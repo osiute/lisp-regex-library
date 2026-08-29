@@ -1,13 +1,13 @@
 ;; Логика сбора границ непересекающихся классов эквивалентности по объекту AST
 (in-package :regex-library)
 
-(defparameter +max-unicode-code+ #x10FFFF)
+(defparameter +max-unicode+ #x10FFFF)
 
 ;; Добавляет границы диапазона (start-code, end-code + 1) в set
 (defun add-endpoint-range (set start-code end-code)
-  (assert (and (>= start-code 0) (<= start-code +max-unicode-code+)) ()
+  (assert (and (>= start-code 0) (<= start-code +max-unicode+)) ()
           "endpoints-collector: add-endpoint-range: недопустимое значение start-code ~A" start-code)
-  (assert (and (>= end-code 0) (<= end-code +max-unicode-code+)) ()
+  (assert (and (>= end-code 0) (<= end-code +max-unicode+)) ()
           "endpoints-collector: add-endpoint-range: недопустимое значение end-code ~A" end-code)
   (assert (<= start-code end-code) ()
           "endpoints-collector: add-endpoint-range: start-code (~A) > end-code (~A)"
@@ -57,7 +57,7 @@
   (let ((endpoints-set (make-hash-table :test 'eql)))
     ;; Обязательные базовые границы пространства Unicode
     (setf (gethash 0 endpoints-set) t)
-    (setf (gethash #x110000 endpoints-set) t)
+    (setf (gethash (1+ +max-unicode+) endpoints-set) t)
     (when ast
       (collect-ast-endpoints ast endpoints-set)
     )
