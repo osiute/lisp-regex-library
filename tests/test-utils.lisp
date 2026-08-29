@@ -74,6 +74,7 @@
   (run-grammar-expression-tests)
   (run-endpoints-collector-tests)
   (run-endpoints-converter-tests)
+  (run-unicode-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")
 )
 

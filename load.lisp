@@ -26,6 +26,7 @@
   (format t "~2TUnicode:~%")
   (format t "~4T(run-endpoints-collector-tests)~%")
   (format t "~4T(run-endpoints-converter-tests)~%")
+  (format t "~4T(run-unicode-tests)~%")
   (format t "~2TNFA:~%")
   (format t "~2TDFA:~%")
   (format t "~2TEngine (main):~%")

@@ -2,6 +2,7 @@
 (in-package :regex-library)
 
 (defparameter +max-unicode+ #x10FFFF)
+(defparameter +right-class-bound+ (1+ +max-unicode+))
 
 ;; Добавляет границы диапазона (start-code, end-code + 1) в set
 (defun add-endpoint-range (set start-code end-code)
@@ -57,7 +58,7 @@
   (let ((endpoints-set (make-hash-table :test 'eql)))
     ;; Обязательные базовые границы пространства Unicode
     (setf (gethash 0 endpoints-set) t)
-    (setf (gethash (1+ +max-unicode+) endpoints-set) t)
+    (setf (gethash +right-class-bound+ endpoints-set) t)
     (when ast
       (collect-ast-endpoints ast endpoints-set)
     )
