@@ -68,6 +68,7 @@
   (format t "~%=== Запуск всех тестов regex-library ===~%~%")
   (run-state-tests)
   (run-char-class-tests)
+  (run-range-quantifier-tests)
   (run-grammar-atoms-tests)
   (run-grammar-quantifier-tests)
   (run-grammar-concatenation-tests)
