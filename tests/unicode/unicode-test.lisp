@@ -93,7 +93,6 @@
        "Таблица для \"[D-K]{3,4}[F-X]*\": 'L', 'R', 'X' имеют class-id = 3")
       (funcall assert-true-fn (= class-lower-a class-lower-g class-lower-z 4)
        "Таблица для \"[D-K]{3,4}[F-X]*\": 'a', 'g', 'z' имеют class-id = 4")
-      (format t "~S ~S ~S~%" class-upper-k class-upper-r class-upper-x)
     )
   )
 )

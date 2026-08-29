@@ -23,7 +23,7 @@
     (funcall assert-true-fn (ast-char-class-p ast) "точка .")
     (funcall assert-equal-fn (ast-char-class-ranges ast) +dot-all-chars+
              "диапазон точки")
-    (format t "    Диапазоны точки: ~S~%" (ast-char-class-ranges ast)))
+  )
   (let ((ast (parse-regex "[a-z]")))
     (funcall assert-true-fn (ast-char-class-p ast) "символьный класс [a-z]"))
   (let ((ast (parse-regex "\\d")))
