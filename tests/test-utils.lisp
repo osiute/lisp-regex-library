@@ -73,6 +73,7 @@
   (run-grammar-concatenation-tests)
   (run-grammar-expression-tests)
   (run-endpoints-collector-tests)
+  (run-endpoints-converter-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")
 )
 

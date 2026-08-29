@@ -4,7 +4,7 @@
 
 ;; Структура для таблицы эквивалентных классов. 
 (defstruct equivalence-table
-  (endpoints #(0 #x110000) :type simple-vector)
+  (endpoints #(0 +max-unicode-code+) :type (simple-array fixnum(*)))
   (num-classes 1 :type fixnum)
 )
 
