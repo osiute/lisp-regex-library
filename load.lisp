@@ -14,7 +14,7 @@
 (defun print-help()
   (format t "--------------------------------------------------~%")
   (format t "Доступные тесты:~%")
-  (format t "~4T(run-tests)~%~%")
+  (format t "~4T(run-all-tests)~%~%")
   (format t "~2TParser:~%")
   (format t "~4T(run-state-tests)~%")
   (format t "~4T(run-char-class-tests)~%")
