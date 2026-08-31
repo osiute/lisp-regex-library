@@ -1,8 +1,14 @@
 digraph NFA {
   rankdir=LR;
   start [shape=none, label=""];
-  start -> node0;
+  start -> node2;
   node0 [label="0", shape=circle];
-  node0 -> node1 [label="ε"];
-  node1 [label="1", shape=doublecircle];
+  node0 -> node1 [label="Class 1"];
+  node1 [label="1", shape=circle];
+  node1 -> node3 [label="ε"];
+  node1 -> node0 [label="ε"];
+  node2 [label="2", shape=circle];
+  node2 -> node3 [label="ε"];
+  node2 -> node0 [label="ε"];
+  node3 [label="3", shape=doublecircle];
 }

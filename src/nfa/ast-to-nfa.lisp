@@ -150,6 +150,9 @@
         (max-val (ast-range-max node))
         (child (ast-range-child node))
         (frags nil))
+    (assert (or (null max-val) (<= min-val max-val)) () 
+    "ast-to-nfa: compile-ast-range: min-val > max-val. min-val = ~A, max-val = ~A"
+                                                min-val max-val)
     ;; 1. Собираем min обязательных копий
     (dotimes (i min-val)
       (push (compile-ast-node builder child eq-table) frags)
