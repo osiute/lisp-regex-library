@@ -75,6 +75,8 @@
   (run-endpoints-collector-tests)
   (run-endpoints-converter-tests)
   (run-unicode-tests)
+  (run-char-class-to-class-ids-tests)
+  (run-nfa-thompson-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")
 )
 
