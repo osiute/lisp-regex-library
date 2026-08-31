@@ -37,7 +37,7 @@
           (make-ast-char-class :ranges builtin-ranges :negated-p t))
         (builtin-ranges
           (make-ast-char-class :ranges builtin-ranges :negated-p nil))
-        (builtin-capital-p (error "parse-escape-char-class: ;; DELETE ME!!!!!!!!!!!!!!
+        ((builtin-capital-p escaped) (error "parse-escape-char-class:
             Нет диапазонов для встроенной заглавной буквы. Я сделал плохую программу!"))
         (t (make-ast-char-class :ranges (list (cons escaped escaped)) :negated-p nil))
       )
