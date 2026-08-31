@@ -11,6 +11,8 @@
 
 (in-package :regex-library)
 
+(defparameter +dot-file-name+ "nfa.dot")
+
 (defun print-help()
   (format t "--------------------------------------------------~%")
   (format t "Доступные тесты:~%")
@@ -37,6 +39,10 @@
   (format t "~2T(parse-regex PATTERN)~%")
   (format t "~2T(print-ast-node NODE)~%")
   (format t "~2T(papre PATTERN) — parse and print regex ~%")
+  (format t "~2T(create-nfa PATTERN)~%")
+  (format t "~2T(generate-dot-on-nfa NFA)~%")
+  (format t "~2T(nfa-dot PATTERN FILE-NAME) — записать внутреннее представление НКА, сгенерированного по паттерну, в файл nfa.dot~%")
+
   (format t "~2T(reload) — перезагрузить load.lisp в REPL ~%")
   (format t "~2T(print-help)~%")
   (format t "--------------------------------------------------~%")
@@ -52,6 +58,28 @@
 ;; 
 (defun reload ()
   (load "load.lisp")
+)
+
+(defun create-nfa (pattern)
+  (let* ((ast-root (parse-regex pattern))
+         (eq-table (make-equivalence-table-from-ast ast-root))
+         (nfa (build-nfa-from-ast ast-root eq-table)))
+    nfa)
+)
+
+(defun generate-dot-on-nfa (nfa file-name)
+  (with-open-file (out file-name :direction :output :if-exists :supersede)
+    (nfa-to-dot nfa out)
+  )
+)
+
+(defun nfa-dot (pattern &optional file-name)
+  (when (null file-name)
+    (setf file-name +dot-file-name+)
+  )
+  (let ((nfa-to-output (create-nfa pattern)))
+    (generate-dot-on-nfa nfa-to-output file-name)
+  )
 )
 
 (format t "~%=== Проект успешно загружен! ===~%")
