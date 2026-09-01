@@ -56,6 +56,7 @@
                   )
                   (:module "nfa"
                    :components ((:file "nfa-thompson-test")
+                                 (:file "closure-test")
                    )
                   )
                   (:module "unicode"

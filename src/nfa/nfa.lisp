@@ -7,6 +7,11 @@
 ;; - :epsilon: безусловный эпсилон-переход;
 ;; - :anchor-start ('^'): эпсилон-переход при условии начала строки (после \r, \n или на первом (i = 0) символе);
 ;; - :anchor-end ('$'): эпсилон-переход при условии конца строки (перед \r, \n или при завершении прочтения строки).
+;; - :anchor-word-boundary ('\b')
+;; - :anchor-non-word-boundary ('\B')
+;; - :anchor-start-of-text ('\A')
+;; - :anchor-end-of-text ('\z')
+;; - :anchor-end-of-text-or-newline ('\Z')
 (defstruct nfa-edge
   (label :epsilon)
   (target 0 :type fixnum)
