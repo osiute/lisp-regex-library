@@ -63,9 +63,15 @@
 
 ;; Якоря (^ и $)
 (defun compile-ast-anchor (builder node)
-  (let ((lbl (if (eq (ast-anchor-type node) :start-of-line)
-                 :anchor-start
-                 :anchor-end)))
+    (let ((lbl (cond
+          ((eq (ast-anchor-type node) :start-of-line) :anchor-start)
+          ((eq (ast-anchor-type node) :end-of-line) :anchor-end)
+          ((eq (ast-anchor-type node) :word-boundary) :anchor-word-boundary)
+          ((eq (ast-anchor-type node) :non-word-boundary) :anchor-non-word-boundary)
+          ((eq (ast-anchor-type node) :absolute-start-of-text) :anchor-start-of-text)
+          ((eq (ast-anchor-type node) :absolute-end-of-text) :anchor-end-of-text)
+          ((eq (ast-anchor-type node) :absolute-end-of-text-or-newline) :anchor-end-of-text-or-newline)
+          (t (error "ast-to-nfa/compile-ast-anchor: неизвестный тип якоря ~A" (ast-anchor-type node))))))
     (make-basic-fragment builder lbl)
   )
 )

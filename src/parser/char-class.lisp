@@ -19,11 +19,24 @@
   )
 )
 
+;; Возвращает тип якоря ast-anchor для экранированных символов (\b, \B, \A, \z, \Z)
+(defun get-escaped-anchor-type (ch)
+  (case ch
+    (#\b :word-boundary)
+    (#\B :non-word-boundary)
+    (#\A :absolute-start-of-text)
+    (#\z :absolute-end-of-text)
+    (#\Z :absolute-end-of-text-or-newline)
+    (t nil)
+  )
+)
+
 (defun builtin-capital-p (ch)
   (or (eql ch #\D) (eql ch #\W) (eql ch #\S))
 )
 
-;; Парсит экранированный спецкласс (\d, \w, \s) или обычный экранированный символ (\., \\)
+;; Парсит экранированный спецкласс (\d, \w, \s), обычный экранированный символ (\., \\)
+;; или якоря \b, \B, \A, \z, \Z
 (defun parse-escape-char-class (state)
   (parser-next state) ; пропускаем '\'
   (let ((escaped (parser-next state)))
@@ -31,14 +44,16 @@
       (error "Синтаксическая ошибка: незавершённая escape-последовательность в позиции ~A"
              (parser-state-index state))
     )
-    (let ((builtin-ranges (get-builtin-char-class-ranges escaped)))
+    (let ((builtin-ranges (get-builtin-char-class-ranges escaped))
+          (escaped-anchor-type (get-escaped-anchor-type escaped)))
       (cond
-        ((and builtin-ranges (builtin-capital-p escaped))
+        ((and builtin-ranges (builtin-capital-p escaped)) ; \D, \W, \S
           (make-ast-char-class :ranges builtin-ranges :negated-p t))
-        (builtin-ranges
+        (builtin-ranges ; \d, \w, \s
           (make-ast-char-class :ranges builtin-ranges :negated-p nil))
         ((builtin-capital-p escaped) (error "parse-escape-char-class:
             Нет диапазонов для встроенной заглавной буквы. Я сделал плохую программу!"))
+        (escaped-anchor-type (make-ast-anchor :type escaped-anchor-type)) ;
         (t (make-ast-char-class :ranges (list (cons escaped escaped)) :negated-p nil))
       )
     )
