@@ -3,7 +3,7 @@
 (in-package :regex-library)
 
 (defun make-equivalence-table-from-ast (ast)
-  "Инициализирует и возвращает объект equivalence-table на основе ast (объекта ast-node)"
+  "Инициализирует и возвращает объект equivalence-table на основе AST (объекта ast-node)"
   (let ((vec (get-sorted-endpoints ast)))
     (make-equivalence-table 
       :endpoints vec
