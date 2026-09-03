@@ -1,3 +1,7 @@
+# === My files ===
+*.dot
+*.png
+
 # === Common Lisp & SBCL Compilation Artifacts ===
 *.fasl
 *.lisp-temp

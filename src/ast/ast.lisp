@@ -27,7 +27,7 @@
 ;; Узел символьного класса (например, [a-z0-9], \d)
 (defstruct (ast-char-class (:include ast-node))
   (ranges nil :type list) ; список диапазонов вида ((start.end)...)
-  (negated-p nil :type boolean) ; исклюение символов из диапазона  
+  (negated-p nil :type boolean) ; инвертировать диапазон 
 )
 
 ;; -----------------------------------------------------------------------------
@@ -73,7 +73,10 @@
 ;; Якоря (^, $)
 ;; -----------------------------------------------------------------------------
 (defstruct (ast-anchor (:include ast-node))
-  (type :start-of-line :type keyword) ; :start-of-line - начало строки, :end-of-line - конец строки
+  ;; :start-of-line — ^, :end-of-line — $
+  ;; :word-boundary — \b, :non-word-boundary — \B
+  ;; :absolute-start-of-text — \A, :absolute-end-of-text — \z, absolute-end-of-text-or-newline — \Z
+  (type :start-of-line :type keyword) ; 
 )
 
 ;; -----------------------------------------------------------------------------
