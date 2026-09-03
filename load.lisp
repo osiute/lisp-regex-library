@@ -33,6 +33,7 @@
   (format t "~2TNFA:~%")
   (format t "~4T(run-nfa-thompson-tests)~%")
   (format t "~4T(run-nfa-closure-tests)~%")
+  (format t "~4T(run-nfa-reverse-tests)~%")
   (format t "~2TDFA:~%")
   (format t "~2TEngine (main):~%")
   (format t "--------------------------------------------------~%")

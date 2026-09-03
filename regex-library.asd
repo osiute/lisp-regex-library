@@ -57,6 +57,7 @@
                   (:module "nfa"
                    :components ((:file "nfa-thompson-test")
                                  (:file "closure-test")
+                                 (:file "reverse-nfa-test")
                    )
                   )
                   (:module "unicode"

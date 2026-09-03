@@ -78,6 +78,7 @@
   (run-char-class-to-class-ids-tests)
   (run-nfa-thompson-tests)
   (run-nfa-closure-tests)
+  (run-nfa-reverse-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")
 )
 
