@@ -1,17 +1,6 @@
 ;; Создаёт новый, развёрнутый объект nfa на основе существующего прямого.
 (in-package :regex-library)
 
-;; Принимает НКА и возвращает новый НКА с инвертированным направлением всех рёбер
-(defun reverse-nfa (nfa-to-reverse)
-  (let ((reversed-nfa (make-raw-reversed-nfa nfa-to-reverse))
-        (orig-states (nfa-states nfa-to-reverse)))
-    (dotimes (src (length orig-states))
-      (reverse-state-edges! reversed-nfa src (aref orig-states src))
-    )
-    reversed-nfa
-  )
-)
-
 ;; Создаёт пустой НКА с поменянными местами start-state и accept-state
 (defun make-raw-reversed-nfa (nfa-to-reverse)
   (let* ((size (length (nfa-states nfa-to-reverse)))

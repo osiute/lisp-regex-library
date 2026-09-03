@@ -3,7 +3,7 @@
 
 ;; Вычисляет эпсилон-замыкание для initial-states с учётом битового контекста context.
 ;; Возвращает новый отсортированный статический вектор fixnum состояний.
-(defun compute-nfa-closure (nfa initial-states context queue visited)
+(defun epsilon-closure (nfa initial-states context queue visited)
   (init-closure-queue! queue visited initial-states)
   (let ((head 0))
     ;; Обход в ширину по плоскому буферу queue
