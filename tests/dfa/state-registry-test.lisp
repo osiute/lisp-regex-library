@@ -33,13 +33,13 @@
     
     ;; Проверка пустых и неподходящих подмножеств
     (funcall assert-equal-fn (nfa-set-accept-p empty-set accept-id) nil
-             "пустой nfa-set не содержит accept-state")
+             "nfa-set-accept-p: пустой nfa-set не содержит accept-state")
     (funcall assert-equal-fn (nfa-set-accept-p non-accept-set accept-id) nil
-             "nfa-set без accept-state возвращает nil")
+             "nfa-set-accept-p: nfa-set без accept-state возвращает nil")
     
     ;; Проверка наличия терминального состояния
     (funcall assert-true-fn (nfa-set-accept-p accept-set accept-id)
-             "nfa-set с accept-state возвращает t")
+             "nfa-set-accept-p: nfa-set с accept-state возвращает t")
   )
 )
 
@@ -53,11 +53,11 @@
     
     ;; Проверка сохранения вектора и корректности флага accept-p
     (funcall assert-equal-fn (dfa-state-nfa-set state-normal) vec-normal
-             "вектор nfa-set сохранен в dfa-state")
+             "create-dfa-state: вектор nfa-set сохранен в dfa-state")
     (funcall assert-equal-fn (dfa-state-accept-p state-normal) nil
-             "обычное состояние: accept-p = nil")
+             "create-dfa-state: обычное состояние: accept-p = nil")
     (funcall assert-true-fn (dfa-state-accept-p state-accept)
-             "принимающее состояние: accept-p = t")
+             "create-dfa-state: принимающее состояние: accept-p = t")
   )
 )
 
@@ -70,25 +70,25 @@
          (id0 (register-dfa-state! dfa nfa-set state)))
     
     ;; Проверка присвоения id, изменения размера массива и реестра
-    (funcall assert-equal-fn id0 0 "первое состояние получает id 0")
-    (funcall assert-equal-fn (length (dfa-states dfa)) 1 "длина dfa-states = 1")
-    (funcall assert-true-fn (eq (aref (dfa-states dfa) 0) state) "объект сохранен в массиве")
-    (funcall assert-equal-fn (gethash nfa-set (dfa-state-map dfa)) 0 "маппинг в state-map создан")
+    (funcall assert-equal-fn id0 0 "register-dfa-state (\"(a|b){2,5}c*\"): первое состояние получает id 0")
+    (funcall assert-equal-fn (length (dfa-states dfa)) 1 "register-dfa-state (\"(a|b){2,5}c*\"): длина dfa-states = 1")
+    (funcall assert-true-fn (eq (aref (dfa-states dfa) 0) state) "register-dfa-state (\"(a|b){2,5}c*\"): объект сохранен в массиве")
+    (funcall assert-equal-fn (gethash nfa-set (dfa-state-map dfa)) 0 "register-dfa-state (\"(a|b){2,5}c*\"): маппинг в state-map создан")
   )
 )
 
-;; Вспомогательная функция для проверки попаданий в кэш (Cache Hit)
+;; Cache Hit
 (defun test-get-or-register-cache-hit (dfa set-a assert-equal-fn)
   (let ((set-a-copy (copy-seq set-a)))
     ;; Запросы по той же ссылке и по эквивалентному вектору
     (funcall assert-equal-fn (get-or-register-dfa-state! dfa set-a) 0
-             "cache hit по той же ссылке на объект")
+             "get-or-register-dfa-state: cache hit по той же ссылке на объект")
     (funcall assert-equal-fn (get-or-register-dfa-state! dfa set-a-copy) 0
-             "cache hit по эквивалентной копии вектора (equalp)")
+             "get-or-register-dfa-state: cache hit по эквивалентной копии вектора (equalp)")
   )
 )
 
-;; Проверяет логику «поиск или регистрация» (Cache Miss / Cache Hit)
+;; Cache Miss / Cache Hit
 (defun test-get-or-register-dfa-state (assert-true-fn assert-equal-fn)
   (let* ((nfa (create-nfa "(a|b){2,5}c*"))
          (dfa (make-lazy-dfa nfa))
@@ -96,16 +96,16 @@
          (set-b (make-array 2 :element-type 'fixnum :initial-contents '(38 39))))
     
     ;; Первичный промах кэша
-    (funcall assert-equal-fn (get-or-register-dfa-state! dfa set-a) 0 "cache miss: id 0")
+    (funcall assert-equal-fn (get-or-register-dfa-state! dfa set-a) 0 "get-or-register-dfa-state cache miss: id 0")
     
     ;; Повторные попадания в кэш
     (test-get-or-register-cache-hit dfa set-a assert-equal-fn)
     
     ;; Регистрация второго независимого состояния
     (let ((id1 (get-or-register-dfa-state! dfa set-b)))
-      (funcall assert-equal-fn id1 1 "cache miss для нового множества: id 1")
+      (funcall assert-equal-fn id1 1 "get-or-register-dfa-state: cache miss для нового множества: id 1")
       (funcall assert-true-fn (dfa-state-accept-p (aref (dfa-states dfa) id1))
-               "зарегистрированное состояние с accept-id имеет accept-p = t")
+               "get-or-register-dfa-state: зарегистрированное состояние с accept-id имеет accept-p = t")
     )
   )
 )
