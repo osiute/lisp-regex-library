@@ -3,9 +3,10 @@
 
 ;; Проверяет, входит ли принимающее состояние НКА в каноническое подмножество nfa-set
 (defun nfa-set-accept-p (nfa-set accept-state-id)
-  (declare (type (simple-array fixnum (*)) nfa-set)
+  (declare (type (simple-array fixnum(*)) fixnum nfa-set)
            (type fixnum accept-state-id))
-  (not (null (find accept-state-id nfa-set :test #'=)))
+  (loop for x across nfa-set
+        thereis (= x accept-state-id))
 )
 
 ;; Создает объект dfa-state и определяет, является ли оно принимающим

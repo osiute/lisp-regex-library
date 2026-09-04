@@ -81,6 +81,7 @@
   (run-nfa-reverse-tests)
   (run-state-registry-tests)
   (run-start-states-tests)
+  (run-cache-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")
 )
 
