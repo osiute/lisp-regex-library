@@ -75,6 +75,7 @@
                                 (:file "unicode-test"             :depends-on ("endpoints-collector-test" "endpoints-converter-test"))))
                   (:module "dfa"
                   :components ((:file "state-registry-test")
+                                (:file "start-states-test")
                   ))
                 )))
   :perform (asdf:test-op (op c)
