@@ -35,7 +35,14 @@
                                            (:file "nfa-visualizer" :depends-on ("nfa"))
                                            (:file "closure" :depends-on ("nfa"))
                                            (:file "main" :depends-on ("nfa" "nfa-builder" "ast-to-nfa" "reverse-nfa" "closure"))))
-                             (:file "dfa"     :depends-on ("nfa" "unicode"))
+                             (:module "dfa"
+                              :depends-on ("nfa")
+                              :components ((:file "dfa")
+                                           (:file "state-registry" :depends-on ("dfa"))
+                                           (:file "start-states" :depends-on ("dfa" "state-registry"))
+                                           (:file "cache" :depends-on ("dfa" "start-states"))
+                                           (:file "step" :depends-on ("dfa" "state-registry" "cache"))
+                                           (:file "main" :depends-on ("dfa" "state-registry" "start-states" "step"))))
                              (:file "engine"  :depends-on ("parser" "unicode" "nfa" "dfa")))))
   :in-order-to ((asdf:test-op (asdf:test-op "regex-library/tests"))))
 
