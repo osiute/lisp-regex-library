@@ -36,10 +36,10 @@
     (cond
       ((eq label :epsilon) t)
       ((eq label :anchor-start) (logbitp 0 context)) ; -------1
-      ((eq label :anchor-abs-start) (logbitp 1 context)) ; ------1-
+      ((eq label :anchor-start-of-text) (logbitp 1 context)) ; ------1-
       ((eq label :anchor-end) (logbitp 2 context)) ; -----1--
-      ((eq label :anchor-abs-end-newline) (logbitp 3 context)) ; ----1---
-      ((eq label :anchor-abs-end) (logbitp 4 context)) ; ---1----
+      ((eq label :anchor-end-of-text-or-newline) (logbitp 3 context)) ; ----1---
+      ((eq label :anchor-end-of-text) (logbitp 4 context)) ; ---1----
       ((eq label :anchor-word-boundary) (logbitp 5 context)) ; --1-----
       ((eq label :anchor-non-word-boundary) (not (logbitp 5 context))) ; --0-----
       (t nil)
