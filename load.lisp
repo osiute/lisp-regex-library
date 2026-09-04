@@ -35,6 +35,7 @@
   (format t "~4T(run-nfa-closure-tests)~%")
   (format t "~4T(run-nfa-reverse-tests)~%")
   (format t "~2TDFA:~%")
+  (format t "~4T(run-state-registry-tests)~%")
   (format t "~2TEngine (main):~%")
   (format t "--------------------------------------------------~%")
   (format t "Доступные команды:~%")
@@ -42,7 +43,7 @@
   (format t "~2T(print-ast-node NODE)~%")
   (format t "~2T(papre PATTERN) — parse and print regex ~%")
   (format t "~2T(create-nfa PATTERN)~%")
-  (format t "~2T(generate-dot-on-nfa NFA)~%")
+  (format t "~2T(generate-dot-on-nfa NFA FILE-NAME)~%")
   (format t "~2T(nfa-dot PATTERN FILE-NAME) — записать внутреннее представление НКА, сгенерированного по паттерну, в файл nfa.dot~%")
 
   (format t "~2T(reload) — перезагрузить load.lisp в REPL ~%")

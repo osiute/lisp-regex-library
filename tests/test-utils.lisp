@@ -79,6 +79,7 @@
   (run-nfa-thompson-tests)
   (run-nfa-closure-tests)
   (run-nfa-reverse-tests)
+  (run-state-registry-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")
 )
 
