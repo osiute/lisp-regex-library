@@ -26,9 +26,12 @@
                 :type (simple-array fixnum (64)))
   ;; Максимально допустимое число состояний до полного сброса кэша
   (max-states 1000 :type fixnum)
-  ;; Выделенные заранее буферы для compute-nfa-closure (избегаем аллокаций)
-  (closure-queue #() :type vector)
-  (closure-visited #() :type (simple-array bit (*)))
+  ;; Выделенные заранее буферы для compute-nfa-closure и compute-nfa-transitions (для избегания аллокаций)
+  (nfa-buffer-queue (make-array 16 :element-type 'fixnum 
+                                   :fill-pointer 0 
+                                   :adjustable t)
+                    :type (array fixnum (*)))
+  (nfa-buffer-visited #*0 :type (simple-array bit (*)))
 )
 
 ;;; ----------------------------------------------------------------------------
@@ -44,8 +47,8 @@
 )
 
 ;; Выделяет плоский буфер очереди и битовый вектор посещений под размер НКА
-(defun allocate-closure-buffers (nfa-size)
-  (values (make-array nfa-size :adjustable t :fill-pointer 0)
+(defun allocate-nfa-buffers (nfa-size)
+  (values (make-array nfa-size :element-type 'fixnum :adjustable t :fill-pointer 0)
           (make-array nfa-size :element-type 'bit :initial-element 0)
   )
 )
@@ -53,11 +56,11 @@
 ;; Создаёт и инициализирует объект ленивого ДКА
 (defun make-lazy-dfa (nfa &key (max-states 1000))
   (let ((nfa-size (length (nfa-states nfa))))
-    (multiple-value-bind (queue visited) (allocate-closure-buffers nfa-size)
+    (multiple-value-bind (queue visited) (allocate-nfa-buffers nfa-size)
       (make-dfa :nfa nfa
                 :max-states max-states
-                :closure-queue queue
-                :closure-visited visited)
+                :nfa-buffer-queue queue
+                :nfa-buffer-visited visited)
     )
   )
 )

@@ -32,9 +32,26 @@
   Если QUEUE или VISITED не переданы, они создаются автоматически под размер NFA.
   "
   (let* ((size (length (nfa-states nfa)))
-         (actual-queue (or queue (make-array size :fill-pointer 0 :adjustable t)))
+         (actual-queue (or queue (make-array size :element-type 'fixnum :fill-pointer 0 :adjustable t)))
          (actual-visited (or visited (make-array size :element-type 'bit :initial-element 0))))
     (epsilon-closure nfa initial-states context actual-queue actual-visited)
+  )
+)
+
+(defun compute-nfa-class-id-transitions (nfa initial-states class-id &key queue visited)
+  "Вычисляет множество целевых состояний переходов по CLASS-ID для (из) INITIAL-STATES.
+  Возвращает новый канонический (отсортированный и статический) вектор fixnum состояний.
+  NFA — объект структуры nfa;
+  INITIAL-STATES — вектор индексов состояний NFA, для которых вычисляются целевые состояния переходов;
+  CLASS-ID — fixnum, label, для которого вычисляются целевые состояния переходов;
+  QUEUE — динамический вектор индексов состояний NFA (чтобы не создавать каждый раз новый), по которому собираются целевые состояния;
+  VISITED — битовый вектор (длины состояний NFA), используемый для отметки уже добавленных в очередь состояний.
+  Если QUEUE или VISITED не переданы, они создаются автоматически под размер NFA.
+  "
+  (let* ((size (length (nfa-states nfa)))
+         (actual-queue (or queue (make-array size :element-type 'fixnum :fill-pointer 0 :adjustable t)))
+         (actual-visited (or visited (make-array size :element-type 'bit :initial-element 0))))
+    (class-id-transitions nfa initial-states class-id actual-queue actual-visited)
   )
 )
 

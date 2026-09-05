@@ -34,8 +34,8 @@
                                            (:file "ast-to-nfa"  :depends-on ("nfa" "nfa-builder"))
                                            (:file "reverse-nfa" :depends-on ("nfa"))
                                            (:file "nfa-visualizer" :depends-on ("nfa"))
-                                           (:file "closure" :depends-on ("nfa"))
-                                           (:file "main" :depends-on ("nfa" "nfa-builder" "ast-to-nfa" "reverse-nfa" "closure"))))
+                                           (:file "compute-transitions" :depends-on ("nfa"))
+                                           (:file "main" :depends-on ("nfa" "nfa-builder" "ast-to-nfa" "reverse-nfa" "compute-transitions"))))
                              (:module "dfa"
                               :depends-on ("nfa")
                               :components ((:file "dfa")

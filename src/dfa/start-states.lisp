@@ -17,8 +17,8 @@
   (let* ((nfa (dfa-nfa dfa))
          (start-vec (vector (nfa-start-state nfa))))
     (compute-nfa-closure nfa start-vec initial-context
-                         :queue (dfa-closure-queue dfa)
-                         :visited (dfa-closure-visited dfa))
+                         :queue (dfa-nfa-buffer-queue dfa)
+                         :visited (dfa-nfa-buffer-visited dfa))
   )
 )
 
