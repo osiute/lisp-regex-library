@@ -10,7 +10,8 @@
   (nfa-set #() :type (simple-array fixnum (*)))
   ;; Флаг принимающего состояния (t, если nfa-set содержит nfa-accept-state)
   (accept-p nil :type boolean)
-  ;; Таблица переходов: packed-key (fixnum) → target-state-id (fixnum)
+  ;; Таблица переходов: packed-key (fixnum) → target-state-id (fixnum).
+  ;; target-state-id = -1 означает отсутствие перехода по данному ключу (мёртвое состояние).
   (transitions (make-hash-table :test 'eql) :type hash-table)
 )
 

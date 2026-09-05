@@ -1,5 +1,4 @@
-;; Реализует парсинг символьных классов ([a-z], [^0-9], \d, \w, \s)
-
+;; Реализует парсинг символьных классов ([a-z], [^0-9], \d, \w, \s) и экранированных символов (\\, \|, \uXXXX и т.д.)
 (in-package :regex-library)
 
 ;; Возвращает диапазоны для спецклассов \d, \w, \s в формате ((start . end)...)
@@ -19,7 +18,6 @@
   )
 )
 
-;; Возвращает тип якоря ast-anchor для экранированных символов (\b, \B, \A, \z, \Z)
 (defun get-escaped-anchor-type (ch)
   (case ch
     (#\b :word-boundary)
@@ -31,12 +29,23 @@
   )
 )
 
+(defun get-standard-escape-or-unicode-character (ch state)
+  (case ch
+    (#\n (code-char 10))
+    (#\r (code-char 13))
+    (#\t (code-char 9))
+    ((#\\ #\. #\* #\+ #\? #\^ #\$ #\( #\) #\[ #\] #\{ #\} #\|) ch)
+    (#\u (parse-unicode-character state))
+    (t nil)
+  )
+)
+
 (defun builtin-capital-p (ch)
   (or (eql ch #\D) (eql ch #\W) (eql ch #\S))
 )
 
-;; Парсит экранированный спецкласс (\d, \w, \s), обычный экранированный символ (\., \\)
-;; или якоря \b, \B, \A, \z, \Z
+;; Парсит экранированный спецкласс (\d, \w, \s), обычный экранированный символ (\., \\, \| и т.д.),
+;; управляющий символ (\n, \r, \t), юникод-символ (uXXXX, u{X+}) или якоря \b, \B, \A, \z, \Z
 (defun parse-escape-char-class (state)
   (parser-next state) ; пропускаем '\'
   (let ((escaped (parser-next state)))
@@ -51,10 +60,16 @@
           (make-ast-char-class :ranges builtin-ranges :negated-p t))
         (builtin-ranges ; \d, \w, \s
           (make-ast-char-class :ranges builtin-ranges :negated-p nil))
-        ((builtin-capital-p escaped) (error "parse-escape-char-class:
+        ((builtin-capital-p escaped) (error "parser/char-class/parse-escape-char-class:
             Нет диапазонов для встроенной заглавной буквы. Я сделал плохую программу!"))
-        (escaped-anchor-type (make-ast-anchor :type escaped-anchor-type)) ;
-        (t (make-ast-char-class :ranges (list (cons escaped escaped)) :negated-p nil))
+        (escaped-anchor-type (make-ast-anchor :type escaped-anchor-type))
+        (t (progn
+          (let ((standard (get-standard-escape-or-unicode-character escaped state)))
+            (assert standard () "Синтаксическая ошибка: неизвестная escape-последовательность в позиции ~A"
+                                 (1- (parser-state-index state)))
+            (make-ast-literal :char standard)
+          )
+        ))
       )
     )
   )
@@ -79,7 +94,7 @@
              (parser-state-index state))
     )
     (when (> (char-code start-char) (char-code end-char))
-      (error "Синтаксическая ошибка: неверный порядок диапазона (~A-~A) в позиции ~A"
+      (error "Синтаксическая ошибка: неверный порядок диапазона ('~A'-'~A') в позиции ~A"
              start-char end-char (parser-state-index state))
     )
     (cons start-char end-char)

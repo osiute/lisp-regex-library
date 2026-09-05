@@ -15,7 +15,8 @@
                               :depends-on ("ast")
                               :components ((:file "state")
                                            (:file "range-quantifier" :depends-on ("state"))
-                                           (:file "char-class"       :depends-on ("state"))
+                                           (:file "unicode-char" :depends-on ("state"))
+                                           (:file "char-class"       :depends-on ("state" "unicode-char"))
                                            (:file "grammar"          :depends-on ("state" "char-class" "range-quantifier"))
                                            (:file "main"             :depends-on ("grammar"))))
                              (:module "unicode"
