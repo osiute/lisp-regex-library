@@ -57,7 +57,7 @@
 (defun test-flush-dfa-cache (assert-true-fn assert-equal-fn)
   (let ((dfa (make-test-dfa-with-limit "(a|b){2,5}c*" 10)))
     (populate-dfa-states dfa 3)
-    (get-dfa-start-state dfa 0)
+    (get-dfa-start-state! dfa 0)
     
     (flush-dfa-cache! dfa)
     

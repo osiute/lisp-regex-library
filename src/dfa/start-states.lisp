@@ -2,14 +2,6 @@
 (in-package :regex-library)
 
 ;;; ----------------------------------------------------------------------------
-;;; Инициализация и сброс
-;;; ----------------------------------------------------------------------------
-
-(defun reset-start-states! (dfa)
-  (fill (dfa-start-states dfa) -1)
-)
-
-;;; ----------------------------------------------------------------------------
 ;;; Вычисление и кэширование
 ;;; ----------------------------------------------------------------------------
 
@@ -23,12 +15,12 @@
 )
 
 (defun compute-and-cache-start-state! (dfa initial-context)
-  (let* ((closure (compute-start-nfa-closure dfa initial-context))
-         ;; Сохранение состояния в общем реестре ДКА
-         (state-id (get-or-register-dfa-state! dfa closure)))
-    ;; Сохранение вычисленного ID под соответствующим индексом контекста
-    (setf (aref (dfa-start-states dfa) initial-context) state-id)
-    state-id
+  (let ((closure (compute-start-nfa-closure dfa initial-context)))
+    (ensure-cache-space! dfa)
+    (let ((dfa-start-state-id (get-or-register-dfa-state! dfa closure)))
+      (setf (aref (dfa-start-states dfa) initial-context) dfa-start-state-id)
+      dfa-start-state-id
+    )
   )
 )
 
@@ -37,7 +29,8 @@
 ;;; ----------------------------------------------------------------------------
 
 ;; Возвращает ID стартового состояния ДКА для заданного маской контекста
-(defun get-dfa-start-state (dfa initial-context)
+(defun get-dfa-start-state! (dfa initial-context)
+  (declare (type fixnum initial-context))
   (let ((cached-id (aref (dfa-start-states dfa) initial-context)))
     (if (>= cached-id 0)
         cached-id

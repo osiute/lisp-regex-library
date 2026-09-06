@@ -11,7 +11,7 @@
 (defun flush-dfa-cache! (dfa)
   (clrhash (dfa-state-map dfa))
   (setf (fill-pointer (dfa-states dfa)) 0)
-  (reset-start-states! dfa)
+  (fill (dfa-start-states dfa) -1)
 )
 
 ;; Возвращает t, если кэш был очищен, иначе nil.

@@ -40,10 +40,10 @@
                               :depends-on ("nfa")
                               :components ((:file "dfa")
                                            (:file "state-registry" :depends-on ("dfa"))
-                                           (:file "start-states" :depends-on ("dfa" "state-registry"))
-                                           (:file "cache" :depends-on ("dfa" "start-states"))
+                                           (:file "cache" :depends-on ("dfa"))
+                                           (:file "start-states" :depends-on ("dfa" "state-registry" "cache"))
                                            (:file "step" :depends-on ("dfa" "state-registry" "cache"))
-                                           (:file "main" :depends-on ("dfa" "state-registry" "start-states" "step"))))
+                                           (:file "main" :depends-on ("dfa" "state-registry" "start-states" "step" "cache"))))
                              (:file "engine"  :depends-on ("parser" "unicode" "nfa" "dfa")))))
   :in-order-to ((asdf:test-op (asdf:test-op "regex-library/tests"))))
 
