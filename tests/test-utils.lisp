@@ -82,6 +82,7 @@
   (run-state-registry-tests)
   (run-start-states-tests)
   (run-cache-tests)
+  (run-dfa-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")
 )
 

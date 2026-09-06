@@ -38,6 +38,7 @@
   (format t "~4T(run-state-registry-tests)~%")
   (format t "~4T(run-start-states-tests)~%")
   (format t "~4T(run-cache-tests)~%")
+  (format t "~4T(run-dfa-tests)~%")
   (format t "~2TEngine (main):~%")
   (format t "--------------------------------------------------~%")
   (format t "Доступные команды:~%")

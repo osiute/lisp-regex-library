@@ -78,6 +78,7 @@
                   :components ((:file "state-registry-test")
                                 (:file "start-states-test")
                                 (:file "cache-test")
+                                (:file "dfa-test")
                   ))
                 )))
   :perform (asdf:test-op (op c)
