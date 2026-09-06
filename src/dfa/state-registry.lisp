@@ -1,9 +1,15 @@
 ;; Реестр уникальных состояний. Занимается идентификацией, проверкой и хранением уникальных dfa-state объектов.
 (in-package :regex-library)
 
+;; Проверяет, существует ли состояние с заданным nfa-set.
+(declaim (inline dfa-state-exists-p))
+(defun dfa-state-exists-p (dfa nfa-set)
+  (nth-value 1 (gethash nfa-set (dfa-state-map dfa)))
+)
+
 ;; Проверяет, входит ли принимающее состояние НКА в каноническое подмножество nfa-set
 (defun nfa-set-accept-p (nfa-set accept-state-id)
-  (declare (type (simple-array fixnum(*)) fixnum nfa-set)
+  (declare (type (simple-array fixnum (*)) nfa-set)
            (type fixnum accept-state-id))
   (loop for x across nfa-set
         thereis (= x accept-state-id))
@@ -25,6 +31,17 @@
     (setf (gethash nfa-set (dfa-state-map dfa)) new-id)
 
     new-id
+  )
+)
+
+;; Возвращает ID существующего состояния, если оно есть.
+;; Если состояния нет, выдаёт ошибку.
+(defun get-dfa-state (dfa nfa-set)
+  (multiple-value-bind (existing-id found-p)
+      (gethash nfa-set (dfa-state-map dfa))
+    (assert found-p () "dfa/state-registry/get-dfa-state: нет dfa-state для заданного nfa-set. nfa-set — ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ! НУЖНО ИСПОЛЬЗОВАТЬ get-or-register-dfa-state! ВМЕСТО get-dfa-state."
+                        nfa-set)
+    existing-id
   )
 )
 

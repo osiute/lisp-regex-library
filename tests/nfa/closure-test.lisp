@@ -10,7 +10,7 @@
     (make-nfa :states vec :start-state 0 :accept-state (1- (length states-edges-list)))))
 
 (defun make-test-buffers (nfa-size)
-  (values (make-array (max 16 (* nfa-size 2)) :fill-pointer 0 :adjustable t)
+  (values (make-array (max 16 (* nfa-size 2)) :element-type 'fixnum :fill-pointer 0 :adjustable t)
           (make-array nfa-size :element-type 'bit :initial-element 0)))
 
 (deftest run-nfa-closure-tests "nfa/closure"
