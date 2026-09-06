@@ -46,7 +46,7 @@
 )
 
 ;; Создаёт и инициализирует объект ленивого ДКА
-(defun make-lazy-dfa (nfa &key (max-states 1000))
+(defun make-dfa-instance (nfa max-states)
   (let ((nfa-size (length (nfa-states nfa))))
     (multiple-value-bind (queue visited) (allocate-nfa-buffers nfa-size)
       (make-dfa :nfa nfa
