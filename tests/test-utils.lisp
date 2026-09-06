@@ -28,7 +28,7 @@
            (,failed-sym 0))
        (format t "~%=== Модуль ~A: начало тестирования ===~%" ,module-name)
        (flet ((assert-equal (actual expected test-name)
-                (if (equal actual expected)
+                (if (equalp actual expected)
                     (progn
                       (incf ,passed-sym)
                       (format t "  [OK] ~A~%" test-name))
@@ -79,6 +79,10 @@
   (run-nfa-thompson-tests)
   (run-nfa-closure-tests)
   (run-nfa-reverse-tests)
+  (run-state-registry-tests)
+  (run-start-states-tests)
+  (run-cache-tests)
+  (run-dfa-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")
 )
 

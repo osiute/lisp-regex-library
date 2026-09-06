@@ -10,7 +10,7 @@
     (make-nfa :states vec :start-state 0 :accept-state (1- (length states-edges-list)))))
 
 (defun make-test-buffers (nfa-size)
-  (values (make-array (max 16 (* nfa-size 2)) :fill-pointer 0 :adjustable t)
+  (values (make-array (max 16 (* nfa-size 2)) :element-type 'fixnum :fill-pointer 0 :adjustable t)
           (make-array nfa-size :element-type 'bit :initial-element 0)))
 
 (deftest run-nfa-closure-tests "nfa/closure"
@@ -66,10 +66,10 @@
 (defun test-closure-individual-anchors (assert-true-fn)
   ;; Граф для позитивных якорей (без \B)
   (let ((nfa (make-test-nfa '( ((:anchor-start 1)
-                                (:anchor-abs-start 2)
+                                (:anchor-start-of-text 2)
                                 (:anchor-end 3)
-                                (:anchor-abs-end-newline 4)
-                                (:anchor-abs-end 5)
+                                (:anchor-end-of-text-or-newline 4)
+                                (:anchor-end-of-text 5)
                                 (:anchor-word-boundary 6))
                                () () () () () () ))))
     (multiple-value-bind (q v) (make-test-buffers 7)

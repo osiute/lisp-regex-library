@@ -1,4 +1,5 @@
 # === My files ===
+!src/nfa/images/*
 *.dot
 *.png
 
