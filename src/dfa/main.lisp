@@ -9,7 +9,7 @@
 )
 
 (defun dfa-get-start-state (dfa context unanchored-p)
-  "Вычисляет стартовое состояние DFA с учётом CONTEXT и ANCHORED-P.
+  "Вычисляет стартовое состояние DFA с учётом CONTEXT и UNANCHORED-P.
   Возвращает id (индекс в DFA-STATES) стартового состояния.
   DFA — объект структуры dfa;
   CONTEXT — 'fixnum, представляющий собой битовую маску контекста, где:
