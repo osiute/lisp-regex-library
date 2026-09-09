@@ -6,6 +6,7 @@
   (let* ((size (length (nfa-states nfa-to-reverse)))
          (new-states (make-array size :element-type 'list :initial-element nil)))
     (make-nfa :states new-states
+              :unanchored-start-state (nfa-unanchored-start-state nfa-to-reverse)
               :anchored-start-state (nfa-accept-state nfa-to-reverse)
               :accept-state (nfa-anchored-start-state nfa-to-reverse))
   )
@@ -26,5 +27,15 @@
                         orig-src
                         (nfa-edge-label edge)
                         (nfa-edge-target edge))
+  )
+)
+
+(defun reverse-unanchored-start-state! (reversed-nfa unanchored-start-id)
+  (let* ((loop-edge (make-nfa-edge :label :any-class-id :target unanchored-start-id))
+         (anchored-start-id (nfa-anchored-start-state reversed-nfa))
+         (edge-to-anchored-start (make-nfa-edge :label :epsilon :target anchored-start-id))
+         (states (nfa-states reversed-nfa)))
+    (push loop-edge (aref states unanchored-start-id))
+    (push edge-to-anchored-start (aref states unanchored-start-id))
   )
 )
