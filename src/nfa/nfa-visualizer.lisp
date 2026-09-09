@@ -50,11 +50,11 @@
 (defun nfa-to-dot (nfa &optional (stream nil))
   "Преобразует объект nfa в формат Graphviz DOT."
   (let ((states (nfa-states nfa))
-        (start-id (nfa-start-state nfa))
+        (start-id (nfa-anchored-start-state nfa))
         (accept-id (nfa-accept-state nfa)))
     (format stream "digraph NFA {~%")
     (format stream "  rankdir=LR;~%")
-    ;; Фиктивная начальная стрелка к start-state
+    ;; Фиктивная начальная стрелка к anchored-start-state
     (format stream "  start [shape=none, label=\"\"];~%")
     (format stream "  start -> node~A;~%" start-id)
     ;; Вывод всех вершин и рёбер

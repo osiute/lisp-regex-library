@@ -27,7 +27,7 @@
          (nfa-lit (build-nfa-from-pattern "a")))
     (funcall assert-equal-fn (nfa-states-count nfa-empty) 2 "паттерн '': ровно 2 состояния")
     (funcall assert-equal-fn (nfa-states-count nfa-lit) 2 "паттерн 'a': ровно 2 состояния")
-    (funcall assert-true-fn (= (nfa-start-state nfa-lit) 0) "паттерн 'a': start-state = 0")
+    (funcall assert-true-fn (= (nfa-anchored-start-state nfa-lit) 0) "паттерн 'a': anchored-start-state = 0")
     (funcall assert-true-fn (= (nfa-accept-state nfa-lit) 1) "паттерн 'a': accept-state = 1")
   )
 )
@@ -36,7 +36,7 @@
   (let ((nfa (build-nfa-from-pattern "ab")))
     ;; 'a' (2 состояния) + 'b' (2 состояния) = 4 состояния
     (funcall assert-equal-fn (nfa-states-count nfa) 4 "паттерн 'ab': 4 состояния (цепочка)")
-    (funcall assert-equal-fn (nfa-start-state nfa) 0 "паттерн 'ab': начальное состояние 0")
+    (funcall assert-equal-fn (nfa-anchored-start-state nfa) 0 "паттерн 'ab': начальное состояние 0")
     (funcall assert-equal-fn (nfa-accept-state nfa) 3 "паттерн 'ab': принимающее состояние 3")
   )
 )

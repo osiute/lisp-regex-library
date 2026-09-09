@@ -7,7 +7,7 @@
 
 (defun compute-start-nfa-closure (dfa initial-context)
   (let* ((nfa (dfa-nfa dfa))
-         (start-vec (vector (nfa-start-state nfa))))
+         (start-vec (vector (nfa-anchored-start-state nfa))))
     (compute-nfa-closure nfa start-vec initial-context
                          :queue (dfa-nfa-buffer-queue dfa)
                          :visited (dfa-nfa-buffer-visited dfa))

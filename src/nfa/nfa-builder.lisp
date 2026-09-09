@@ -57,7 +57,7 @@
     )
     (make-nfa
       :states final-array
-      :start-state start-id
+      :anchored-start-state start-id
       :accept-state accept-id
     )
   )
