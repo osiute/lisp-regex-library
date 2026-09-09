@@ -8,6 +8,7 @@
 (defun format-nfa-edge-label (label)
   (cond
     ((eq label :epsilon) "ε")
+    ((eq label :any-class-id) "any")
     ((eq label :anchor-start) "^")
     ((eq label :anchor-end) "$")
     ((eq label :anchor-word-boundary) "\\\\b")
@@ -50,13 +51,16 @@
 (defun nfa-to-dot (nfa &optional (stream nil))
   "Преобразует объект nfa в формат Graphviz DOT."
   (let ((states (nfa-states nfa))
-        (start-id (nfa-anchored-start-state nfa))
+        (anchored-start-id (nfa-anchored-start-state nfa))
+        (unanchored-start-id (nfa-unanchored-start-state nfa))
         (accept-id (nfa-accept-state nfa)))
     (format stream "digraph NFA {~%")
     (format stream "  rankdir=LR;~%")
-    ;; Фиктивная начальная стрелка к anchored-start-state
-    (format stream "  start [shape=none, label=\"\"];~%")
-    (format stream "  start -> node~A;~%" start-id)
+    ;; Фиктивные начальные стрелки к стартовым состяониям
+    (format stream "  anchored [shape=none, label=\"\"];~%")
+    (format stream "  anchored -> node~A [label=\"~A\"];~%" anchored-start-id "anchored")
+    (format stream "  unanchored [shape=none, label=\"\"];~%")
+    (format stream "  unanchored -> node~A [label=\"~A\"];~%" unanchored-start-id "unanchored")
     ;; Вывод всех вершин и рёбер
     (loop for id from 0 below (length states) do
       (write-dot-node stream id accept-id)

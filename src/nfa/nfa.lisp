@@ -26,7 +26,7 @@
   ;; которое имеет эпсилон-переход во внутреннее стартовое состояние (anchored-start-state — индекс на него),
   ;; а также петлю в себя по label :any-class-id.
   ;; Это необходимо для поиска границ подстроки по семантике leftmost-longest.
-  (unachored-start-state -1 :type fixnum)
+  (unanchored-start-state -1 :type fixnum)
   (anchored-start-state -1 :type fixnum)
   (accept-state -1 :type fixnum)
 )

@@ -46,8 +46,16 @@
   )
 )
 
+(defun builder-add-unachored-start! (builder anchored-start-id)
+  (let ((id (builder-add-state! builder)))
+    (builder-add-edge! builder id :any-class-id id)
+    (builder-add-edge! builder id :epsilon anchored-start-id)
+  )  
+)
+
 ;; Финализирует nfa-builder в неизменяемую структуру nfa
-(defun finalize-nfa (builder start-id accept-id)
+(defun finalize-nfa (builder anchored-start-id accept-id)
+  (builder-add-unachored-start! builder anchored-start-id)
   (let* ((builder-vec (nfa-builder-states-vector builder))
           (n (length builder-vec))
           (final-array (make-array n :element-type 'list)))
@@ -57,7 +65,8 @@
     )
     (make-nfa
       :states final-array
-      :anchored-start-state start-id
+      :anchored-start-state anchored-start-id
+      :unanchored-start-state (1- n)
       :accept-state accept-id
     )
   )
