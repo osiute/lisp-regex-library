@@ -8,8 +8,8 @@
   (make-dfa-instance nfa max-states)
 )
 
-(defun dfa-get-start-state (dfa context)
-  "Вычисляет стартовое состояние DFA с учётом CONTEXT.
+(defun dfa-get-start-state (dfa context unanchored-p)
+  "Вычисляет стартовое состояние DFA с учётом CONTEXT и ANCHORED-P.
   Возвращает id (индекс в DFA-STATES) стартового состояния.
   DFA — объект структуры dfa;
   CONTEXT — 'fixnum, представляющий собой битовую маску контекста, где:
@@ -19,8 +19,9 @@
     3 разряд (----x---) — контекст абсолютного конца строки или сразу перед последним '\n', '\r',
     4 разряд (---x----) — контекст абсолютного конца строки,
     5 разряд (--x-----) — контекст границы слова.
+  UNANCHORED-P — 'boolean: если nil, то вычисляет стартовое состояние для привязанного ДКА, иначе — для непривязанного.
   "
-  (get-dfa-start-state! dfa context)
+  (get-dfa-start-state! dfa context :unanchored-p unanchored-p)
 )
 
 ;; Вычисляет целевое состояние ДКА для перехода, возвращая его id.

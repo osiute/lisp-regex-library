@@ -62,8 +62,8 @@
 (defun test-compute-closure-independent (assert-equal-fn)
   (let* ((nfa (create-nfa "(a|b){2,5}c*"))
          (dfa (make-lazy-dfa nfa))
-         (closure-ctx0 (compute-start-nfa-closure dfa 0))
-         (closure-ctx63 (compute-start-nfa-closure dfa 63)))
+         (closure-ctx0 (compute-start-nfa-closure dfa 0 nil))
+         (closure-ctx63 (compute-start-nfa-closure dfa 63 nil)))
     ;; Без якорей замыкания для масок 0 и 63 абсолютно идентичны
     (funcall assert-equal-fn closure-ctx0 closure-ctx63
              "closure-independent (\"(a|b){2,5}c*\"): контекстно-независимый НКА дает одинаковое замыкание")
@@ -75,9 +75,9 @@
   (let* ((nfa (create-nfa "^\\b(abc)+$\\z"))
          (dfa (make-lazy-dfa nfa))
          ;; ctx=0: якоря непроходимы, замыкание содержит только начальную вершину 0
-         (closure-no-ctx (compute-start-nfa-closure dfa 0))
+         (closure-no-ctx (compute-start-nfa-closure dfa 0 nil))
          ;; ctx=63: маска флагов активна, замыкание проходит через рёбра якорей
-         (closure-full-ctx (compute-start-nfa-closure dfa 63)))
+         (closure-full-ctx (compute-start-nfa-closure dfa 63 nil)))
     (funcall assert-equal-fn closure-no-ctx #(0)
              "closure-dependent (\"^\\b(abc)+$\\z\"): при ctx=0 замыкание содержит только стартовое состояние 0")
     (funcall assert-true-fn (= (length closure-full-ctx) 6)
