@@ -44,7 +44,15 @@
                                            (:file "start-states" :depends-on ("dfa" "state-registry" "cache"))
                                            (:file "step" :depends-on ("dfa" "state-registry" "cache"))
                                            (:file "main" :depends-on ("dfa" "state-registry" "start-states" "step" "cache"))))
-                             (:file "engine"  :depends-on ("parser" "unicode" "nfa" "dfa")))))
+                             (:module "engine"
+                              :serial t
+                              :components
+                              ((:file "compiler")
+                              (:file "runner")
+                              (:file "predicates")
+                              (:file "finders")
+                              (:file "transform")))
+                             )))
   :in-order-to ((asdf:test-op (asdf:test-op "regex-library/tests"))))
 
 (asdf:defsystem "regex-library/tests"
