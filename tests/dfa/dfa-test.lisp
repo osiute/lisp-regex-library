@@ -200,36 +200,6 @@
     )
   )
 )
-  ;   ;; Проверка ветки "abc"
-  ;   (let* ((s1 (dfa-step-state dfa s0 1 #b0))  ; Class 1 = 'a'
-  ;          (s2 (dfa-step-state dfa s1 2 #b0))  ; Class 2 = 'b'
-  ;          (s3 (dfa-step-state dfa s2 3 #b0))) ; Class 3 = 'c'
-  ;     (funcall assert-true-fn (> s1 0) "abc|zxc: переход по 'a' создаёт новое состояние")
-  ;     (funcall assert-equal-fn (dfa-accept-state-p dfa s1) nil "abc|zxc: s1 не принимающее")
-  ;     (funcall assert-equal-fn (dfa-accept-state-p dfa s2) nil "abc|zxc: s2 не принимающее")
-  ;     (funcall assert-true-fn (dfa-accept-state-p dfa s3) "abc|zxc: s3 (\"abc\") принимающее")
-      
-  ;     ;; Проверка Hot Path (повторный шаг отдается из кэша)
-  ;     (let ((s1-cached (dfa-step-state dfa s0 1 #b0)))
-  ;       (funcall assert-equal-fn s1-cached s1 "abc|zxc: Hot Path возвращает то же состояние s1")
-  ;     )
-  ;   )
-
-  ;   ;; Проверка ветки "zxc"
-  ;       (let* ((z1 (dfa-step-state dfa s0 7 #b0))  ; Class 7 = 'z'
-  ;         (z2 (dfa-step-state dfa z1 5 #b0))  ; Class 5 = 'x'
-  ;         (z3 (dfa-step-state dfa z2 3 #b0))) ; Class 3 = 'c'
-  ;     (funcall assert-true-fn (> z1 0) "abc|zxc: переход по 'z' создаёт состояние ветки zxc")
-  ;     (funcall assert-true-fn (dfa-accept-state-p dfa z3) "abc|zxc: z3 (\"zxc\") принимающее")
-  ;   )
-
-  ;   ;; Проверка символов не из алфавита (тупиковые состояния -1)
-  ;   (let ((dead-id (dfa-step-state dfa s0 4 #b0))) ; Class 4 отсутствует в НКА
-  ;     (funcall assert-equal-fn dead-id -1 "abc|zxc: невалидный класс возвращает -1")
-  ;     ;; Проверка Hot Path для тупикового состояния
-  ;     (funcall assert-equal-fn (dfa-step-state dfa s0 4 #b0) -1 "abc|zxc: Hot Path для тупика возвращает -1")
-  ;   )
-  ; )
 
 ;;; ----------------------------------------------------------------------------
 ;;; 5. Тестирование сброса кэша (Cache Flush / max-states)
