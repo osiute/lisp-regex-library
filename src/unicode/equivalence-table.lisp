@@ -7,14 +7,6 @@
   (num-classes 1 :type fixnum)
 )
 
-(defun char-to-class-id (char eq-table)
-  "Возвращает Class ID для символа по объекту equivalence-table"
-  (let ((code (char-code char))
-        (vec (equivalence-table-endpoints eq-table)))
-    (binary-search-class-id code vec)
-  )
-)
-
 (defun binary-search-class-id (code vec)
   (let ((low 0)
         (high (1- (length vec))))
