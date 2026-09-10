@@ -3,7 +3,7 @@
 
 ;; Опережающее объявление функций для взаимной рекурсии.
 ;; Без него файл не компилируется.
-(declaim (ftype (function (t) t) 
+(declaim (ftype (function (t t) t) 
                 parse-atom 
                 parse-quantifier 
                 parse-concatenation 
@@ -14,7 +14,7 @@
 (defparameter +invalid-atom-start-chars+ '(#\) #\] #\} #\| #\* #\+ #\?))
 
 ;; 1. Разбор базовых атомов
-(defun parse-atom (state)
+(defun parse-atom (state builtin-char-class-mode)
 "Считывает базовый элемент грамматики (литерал, класс символов, якорь или подвыражение в скобках).
 Возвращает один из AST-узлов: AST-LITERAL, AST-CHAR-CLASS, AST-ANCHOR или результат внутреннего parse-expression.
 "
@@ -45,12 +45,12 @@
 
       ;; Экранирование \d, \w, \s или экранированный литерал
       ((eql cur #\\)
-       (parse-escape-char-class state))
+       (parse-escape-char-class state builtin-char-class-mode))
 
       ;; Группирующие скобки (...)
       ((eql cur #\()
        (parser-next state)
-       (let ((expr (parse-expression state)))
+       (let ((expr (parse-expression state builtin-char-class-mode)))
          (unless (eql (parser-peek state) #\))
            (error "Синтаксическая ошибка: ожидалась ')' в позиции ~A"
                   (parser-state-index state))
@@ -75,11 +75,11 @@
 
 ;; --- Заглушки для интеграции (будем наполнять на следующих шагах) ---
 ;; 2. Разбор квантификаторов
-(defun parse-quantifier (state)
+(defun parse-quantifier (state builtin-char-class-mode)
 "Считывает атом и применимый к нему квантификатор (*, +, ?, {n,m}).
 Возвращает обёрнутый узел (AST-STAR, AST-PLUS, AST-QUESTION, AST-RANGE) или исходный атом, если квантификатор отсутствует.
 "
-  (let ((node (parse-atom state)))
+  (let ((node (parse-atom state builtin-char-class-mode)))
     (let ((next-char (parser-peek state)))
       (cond
         ;; 1. Квантификатор *
@@ -142,7 +142,7 @@
 )
 
 ;; 3. Разбор конкатенаций
-(defun parse-concatenation (state)
+(defun parse-concatenation (state builtin-char-class-mode)
 "Считывает последовательность квантифицированных элементов до |, ) или конца строки.
 Возвращает список элементов, обёрнутый в AST-CONCAT, либо единичный узел (без обёртки), если элемент ровно один; 
 nil, если элементов нет.
@@ -157,7 +157,7 @@ nil, если элементов нет.
           ;; т.к. накапливали элементы через голову
           (setf elements (nreverse elements)))
       ;; Тело цикла
-      (push (parse-quantifier state) elements)
+      (push (parse-quantifier state builtin-char-class-mode) elements)
     )
 
     ;; Возвращаем результат в зависимости от количества элементов
@@ -171,19 +171,19 @@ nil, если элементов нет.
     )
 )
 ;; 4. Разбор всего выражения
-(defun parse-expression (state)
+(defun parse-expression (state builtin-char-class-mode)
 "Точка входа грамматики. Считывает альтернации выражений, разделённые символом '|'.
 Возвращает дерево AST-ALT при наличии альтернаций, либо прокинутый узел нижней операции (результат parse-concatenation).
 Может вернуть AST-EMPTY (эпсилон) или AST-ALT с ребёнком AST-EMPTY.
 "
-  (let ((left (parse-concatenation state)))
+  (let ((left (parse-concatenation state builtin-char-class-mode)))
     (when (null left)
       (setf left (make-ast-empty))
     )
     (if (eql (parser-peek state) #\|)
         (progn
           (parser-next state)
-          (let ((right (parse-expression state)))
+          (let ((right (parse-expression state builtin-char-class-mode)))
             (make-smart-alt left right)
            )
          )

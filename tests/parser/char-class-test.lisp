@@ -9,18 +9,18 @@
 
 ;; Встроенные классы возвращают диапазоны, а \W дополнительно устанавливает отрицание.
 (defun test-escape-char-classes (assert-equal-fn)
-  (let ((node (parse-escape-char-class (make-parser-state :str "\\d" :len 2))))
+  (let ((node (parse-escape-char-class (make-parser-state :str "\\d" :len 2) :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
              '((#\0 . #\9)) "\\d дает диапазон 0-9")
     (funcall assert-equal-fn (ast-char-class-negated-p node)
              nil "\\d не отрицательный"))
-  (let ((node (parse-escape-char-class (make-parser-state :str "\\w" :len 2))))
+  (let ((node (parse-escape-char-class (make-parser-state :str "\\w" :len 2) :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
              '((#\a . #\z) (#\A . #\Z) (#\0 . #\9) (#\_ . #\_))
              "\\w дает диапазоны (a-z, A-Z, 0-9, _)")
     (funcall assert-equal-fn (ast-char-class-negated-p node)
              nil "\\w не отрицательный"))
-  (let ((node (parse-escape-char-class (make-parser-state :str "\\W" :len 2))))
+  (let ((node (parse-escape-char-class (make-parser-state :str "\\W" :len 2) :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
              '((#\a . #\z) (#\A . #\Z) (#\0 . #\9) (#\_ . #\_))
              "\\W дает диапазоны (a-z, A-Z, 0-9, _)")
@@ -83,6 +83,6 @@
            "ошибка: незакрытая квадратная скобка [a-z")
   (funcall assert-error-fn
            (lambda () (parse-escape-char-class
-                       (make-parser-state :str "\\" :len 1)))
+                       (make-parser-state :str "\\" :len 1) :ascii))
            "ошибка: обрывающаяся escape-последовательность")
   )

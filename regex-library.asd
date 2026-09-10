@@ -11,8 +11,9 @@
                                            (:file "ast-printer" :depends-on ("ast"))
                               )
                             )
+                            (:file "builtin-char-classes")
                              (:module "parser"
-                              :depends-on ("ast")
+                              :depends-on ("ast" "builtin-char-classes")
                               :components ((:file "state")
                                            (:file "range-quantifier" :depends-on ("state"))
                                            (:file "unicode-char" :depends-on ("state"))
@@ -45,6 +46,7 @@
                                            (:file "step" :depends-on ("dfa" "state-registry" "cache"))
                                            (:file "main" :depends-on ("dfa" "state-registry" "start-states" "step" "cache"))))
                              (:module "engine"
+                              :depends-on ("ast" "builtin-char-classes" "parser" "unicode" "nfa" "dfa")
                               :serial t
                               :components
                               ((:file "compiler")

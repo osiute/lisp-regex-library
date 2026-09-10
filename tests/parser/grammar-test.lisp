@@ -147,10 +147,11 @@
                        ("((()))" . "парсинг ((())) схлопывается в ast-empty")))
     (let ((node (parse-expression
                  (make-parser-state :str (car test-case)
-                                    :len (length (car test-case))))))
+                                    :len (length (car test-case)))
+                 :ascii)))
       (funcall assert-equal-fn (type-of node) 'ast-empty (cdr test-case))))
   (let ((state (make-parser-state :str "a|" :len 2)))
-    (let ((node (parse-expression state)))
+    (let ((node (parse-expression state :ascii)))
       (funcall assert-equal-fn (type-of node) 'ast-alt
                "парсинг a| дает ast-alt")
       (funcall assert-equal-fn (ast-literal-char (ast-alt-left node)) #\a
@@ -158,7 +159,7 @@
       (funcall assert-equal-fn (type-of (ast-alt-right node)) 'ast-empty
                "правая ветвь ast-empty")))
   (let ((state (make-parser-state :str "|b" :len 2)))
-    (let ((node (parse-expression state)))
+    (let ((node (parse-expression state :ascii)))
       (funcall assert-equal-fn (type-of node) 'ast-alt
                "парсинг |b дает ast-alt")
       (funcall assert-equal-fn (type-of (ast-alt-left node)) 'ast-empty
