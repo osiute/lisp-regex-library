@@ -27,7 +27,7 @@
 ;; Вычисляет целевое состояние ДКА для перехода, возвращая его id.
 (defun dfa-step-state (dfa cur-state-id class-id context)
   "Вычисляет целевое состояние перехода по CLASS-ID из CUR-STATE-ID для DFA с учётом CONTEXT.
-  Возвращает id (индекс в DFA-STATES) целевого состояния.
+  Возвращает id (индекс в DFA-STATES) целевого состояния. Возвращает -1 при попадании в тупик (dead state).
   DFA — объект структуры dfa;
   CUR-STATE-ID — fixnum, индекс в DFA-STATES состояния, из которого совершается переход;
   CLASS-ID — fixnum, класс эквивалентных символов, по которому совершается переход (label ребра ДКА);
@@ -40,6 +40,17 @@
     5 разряд (--x-----) — контекст границы слова;
   "
   (dfa-step dfa cur-state-id class-id context)
+)
+
+(defun dfa-get-state (dfa nfa-set)
+  "Вычисляет состояние ДКА по NFA-SET.
+  Возвращает id (индекс в DFA-STATES) целевого состояния.
+  NFA-SET — каноническое множество индексов состояний НКА;
+  DFA — объект dfa.
+  "
+  (declare (type (simple-array fixnum (*)) nfa-set))
+  (ensure-cache-space! dfa)
+  (get-or-register-dfa-state! dfa nfa-set)
 )
 
 (declaim (inline dfa-accept-state-p))
