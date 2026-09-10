@@ -1,4 +1,3 @@
-;; compile-regex
 (in-package :regex-library)
 
 (defstruct (regex
@@ -6,16 +5,18 @@
              (:copier nil))
   "Скомпилированное регулярное выражение."
   (pattern "" :type string :read-only t)
+  (builtin-char-class-mode :ascii :type symbol :read-only t)
   (direct-dfa nil :read-only t)
   (reversed-dfa nil :read-only t)
   (eq-classes-table nil :read-only t)
 )
 
-(defun compile-regex (pattern &key (max-dfa-states 1000))
-  "Компилирует строковый PATTERN в объект структуры REGEX."
+(defun compile-regex (pattern builtin-char-class-mode &key (max-dfa-states 1000))
+  "Компилирует строковый PATTERN в объект структуры REGEX с учетом режима спецклассов."
   (declare (type string pattern)
+           (type symbol builtin-char-class-mode)
            (type fixnum max-dfa-states))
-  (let* ((ast (parse-regex pattern))
+  (let* ((ast (parse-regex pattern :builtin-char-class-mode builtin-char-class-mode))
          (eq-classes-table (make-equivalence-table-from-ast ast)))
     ;; Создание автоматонов и итогового объекта REGEX
     (multiple-value-bind (dir-nfa rev-nfa) 
@@ -23,6 +24,7 @@
       (multiple-value-bind (dir-dfa rev-dfa) 
           (build-dfa-pair dir-nfa rev-nfa max-dfa-states)
         (%make-regex :pattern pattern
+                    :builtin-char-class-mode builtin-char-class-mode
                     :direct-dfa dir-dfa
                     :reversed-dfa rev-dfa
                     :eq-classes-table eq-classes-table)
@@ -34,7 +36,7 @@
 ;; Строит прямой и обратный НКА по абстрактному синтаксическому дереву и таблице эквивалентности.
 (defun build-nfa-pair (ast eq-classes-table)
   (let* ((dir-nfa (build-nfa-from-ast ast eq-classes-table))
-        (rev-nfa (reverse-nfa dir-nfa)))
+         (rev-nfa (reverse-nfa dir-nfa)))
     (values dir-nfa rev-nfa)
   )
 )
