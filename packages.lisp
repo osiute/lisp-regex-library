@@ -3,6 +3,7 @@
 (defpackage :regex-library
   (:use :cl)
   (:export
+    #:regex
     #:compile-regex
     #:regex-match-p
     #:regex-search-p
