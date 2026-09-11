@@ -12,7 +12,10 @@
 )
 
 (defun compile-regex (pattern builtin-char-class-mode &key (max-dfa-states 1000))
-  "Компилирует строковый PATTERN в объект структуры REGEX с учетом режима спецклассов."
+  "Компилирует строковый PATTERN в объект структуры REGEX с учетом режима спецклассов.
+  BUILTIN-CHAR-CLASS-MODE принимает значения :unicode или :ascii. Опередляет поведение встроенных классов \\d, \\w, \\s и т.д;
+  MAX-DFA-STATES — finumx, определящий максимальное количество состояний ДКА. Для сложных выражений маленькое значение может замедлять работу.
+  "
   (declare (type string pattern)
            (type symbol builtin-char-class-mode)
            (type fixnum max-dfa-states))

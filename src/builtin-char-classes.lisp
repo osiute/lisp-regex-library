@@ -165,6 +165,12 @@
   )
 )
 
+(defun char-newline-p (ch)
+  (or (char= ch #\Newline)
+      (char= ch #\Return)
+  )
+)
+
 ;; Проверка словесного символа (\w) с учетом режима char-mode
 (defun word-char-p (ch char-mode)
   (case char-mode
