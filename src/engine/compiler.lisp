@@ -17,7 +17,7 @@
   MAX-DFA-STATES — finumx, определящий максимальное количество состояний ДКА. Для сложных выражений маленькое значение может замедлять работу.
   "
   (declare (type string pattern)
-           (type symbol builtin-char-class-mode)
+           (type (member :ascii :unicode) builtin-char-class-mode)
            (type fixnum max-dfa-states))
   (let* ((ast (parse-regex pattern :builtin-char-class-mode builtin-char-class-mode))
          (eq-classes-table (make-equivalence-table-from-ast ast)))
