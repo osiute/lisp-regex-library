@@ -40,6 +40,8 @@
   (format t "~4T(run-cache-tests)~%")
   (format t "~4T(run-dfa-tests)~%")
   (format t "~2TEngine (main):~%")
+  (format t "~4T(run-regex-search-p-tests)~%")
+  
   (format t "--------------------------------------------------~%")
   (format t "Доступные команды:~%")
   (format t "~2T(parse-regex PATTERN)~%")

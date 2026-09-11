@@ -83,6 +83,7 @@
   (run-start-states-tests)
   (run-cache-tests)
   (run-dfa-tests)
+  (run-regex-search-p-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")
 )
 

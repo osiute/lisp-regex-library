@@ -14,8 +14,7 @@
 (defun compute-context-mask (text i len char-mode)
   (let ((mask 0)
         (prev-ch (when (> i 0) (char text (1- i))))
-        (curr-ch (when (< i len) (char text i)))
-        (next-ch (when (< (1+ i) len) (char text (1+ i)))))
+        (curr-ch (when (< i len) (char text i))))
     ;; 0 разряд: ^ (начало строки)
     (when (or (= i 0) (and prev-ch (char-newline-p prev-ch)))
       (setf mask (logior mask #b000001)))
@@ -23,14 +22,14 @@
     (when (= i 0)
       (setf mask (logior mask #b000010)))
     ;; 2 разряд: $ (конец строки)
-    (when (or (= i (1- len)) (and next-ch (char-newline-p next-ch)))
+    (when (or (= i len) (and curr-ch (char-newline-p curr-ch)))
       (setf mask (logior mask #b000100)))
     ;; 3 разряд: \Z (почти конец текста)
-    (when (or (= i (1- len))
-              (and (= i (- len 2)) (char-newline-p next-ch)))
+    (when (or (= i len)
+              (and (= i (1- len)) (char-newline-p curr-ch)))
       (setf mask (logior mask #b001000)))
     ;; 4 разряд: \z (конец текста)
-    (when (= i (1- len))
+    (when (= i len)
       (setf mask (logior mask #b010000)))
     ;; 5 разряд: \b (граница слова)
     (let ((prev-w (if (word-char-at-p text (1- i) len char-mode) 1 0))
@@ -51,10 +50,14 @@
 ;; Если терминальное взятое начальное состояние сразу оказалось терминальным (например, для pattern=""),
 ;; возращает left-bound - 1.
 (defun unanchored-direct-pass-to-first-terminal (regex text left-bound right-bound)
-  (assert (and (>= right-bound left-bound) (< right-bound (length text))) ()
-    "unanchored-direct-pass-to-first-terminal: left-bound = ~A, right-bound = ~A, (length text) = ~A. Я НАПИСАЛ УЖАСНУЮ ПРОГРАММУ!!! ЭТА ФУНКЦИЯ ДОЛЖНА ВЫЗЫВАТЬСЯ С ПРАВИЛЬНЫМИ ГРАНИЦАМИ."
-                                               left-bound right-bound (length text))
-  
+  (if (= right-bound (1- left-bound)) ; пустая подстрока
+    (assert (< right-bound (length text)) ()
+      "unanchored-direct-pass-to-first-terminal: left-bound = ~A, right-bound = ~A, (length text) = ~A. Я НАПИСАЛ УЖАСНУЮ ПРОГРАММУ!!! ЭТА ФУНКЦИЯ ДОЛЖНА ВЫЗЫВАТЬСЯ С ПРАВИЛЬНЫМИ ГРАНИЦАМИ."
+                                                    left-bound right-bound (length text))
+    (assert (and (>= right-bound left-bound) (< right-bound (length text))) ()
+      "unanchored-direct-pass-to-first-terminal: left-bound = ~A, right-bound = ~A, (length text) = ~A. Я НАПИСАЛ УЖАСНУЮ ПРОГРАММУ!!! ЭТА ФУНКЦИЯ ДОЛЖНА ВЫЗЫВАТЬСЯ С ПРАВИЛЬНЫМИ ГРАНИЦАМИ."
+                                                    left-bound right-bound (length text))
+  )
   (let* ((dfa (regex-direct-dfa regex))
          (mode (regex-builtin-char-class-mode regex))
          (len (length text))

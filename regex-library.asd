@@ -90,6 +90,12 @@
                                 (:file "cache-test")
                                 (:file "dfa-test")
                   ))
-                )))
+                  (:module "engine"
+                  :components ((:file "regex-search-p-test")
+                               (:file "regex-match-p-test")
+                               (:file "regex-find-first-match-bounds-test")
+                               (:file "make-regex-match-bounds-iterator-test")
+                               (:file "regex-split-test")
+                               (:file "regex-replace-all-test"))))))
   :perform (asdf:test-op (op c)
              (uiop:symbol-call :regex-library/tests :#run-tests)))
