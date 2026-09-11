@@ -4,7 +4,8 @@
 ;; Прямые проходы
 ;; ==================================================================================
 ;; Ищут терминальное состояние на диапазоне [left-bound, right-bound] (включительно).
-;; Возвращает (values text-idx terminal-state-id) или (value nil nil)
+;; Возвращает (values text-idx last-state-id) или (value nil last-state-id),
+;; где last-state-id указывает на состояние, на котором ЗАВЕРШИЛСЯ ПРОХОД, а НЕ на последнее терминальное состояние.
 ;; lazy — ищет первое терминальное состояние;
 ;; greedy — ищет последнее терминальное состояние, до которого можно дотянуться.
 ;; anchored — вычисляет только ветку с left-bound;
@@ -52,8 +53,9 @@
 
 ;; Ищет терминальное состояние на диапазоне [left-bound, right-bound] (включительно).
 ;; return-on-first-terminal-p определяет жадность поиска.
-;; Возвращает через values индекс текста, на котором произошло совпадение, а также id состояния.
-;; Если терминального состояния нет, возвращает (values nil nil), если терминальное состояние не встретилось.
+;; Возвращает (values text-idx last-state-id) или (value nil last-state-id),
+;; где last-state-id указывает на состояние, на котором ЗАВЕРШИЛСЯ ПРОХОД, а НЕ на последнее терминальное состояние.
+;; Если терминальное состояние не встретилось, возвращает (values nil last-state-id).
 ;; Если взятое начальное состояние сразу оказалось терминальным (единственным или первым в зависимости от return-on-first-terminal-p) 
 ;; (например, для pattern=""), возращает (values left-bound - 1 dfa-state-id).
 (defun direct-pass-logic (regex text start-state-id left-bound right-bound
@@ -72,24 +74,22 @@
          (len (length text))
          (eq-table (regex-eq-classes-table regex))
          (curr-state-id start-state-id)
-         (last-accept-i nil)
-         (last-accept-state-id nil))
+         (last-accept-i nil))
     
     (loop for k from left-bound to (1+ right-bound) do
       (when (dfa-accept-state-p dfa curr-state-id)
         (setf last-accept-i (1- k)) ; -1, т.к. переход в терминальное произошёл на прошлом индексе.
-        (setf last-accept-state-id curr-state-id)
         (when return-on-first-terminal-p
-          (return (values last-accept-i last-accept-state-id))
+          (return (values last-accept-i curr-state-id))
         )
       )
-      (when (= k (1+ right-bound)) (return (values last-accept-i last-accept-state-id)))
+      (when (= k (1+ right-bound)) (return (values last-accept-i curr-state-id)))
       (let* ((ch (char text k))
              (eq-cls (char-to-class-id ch eq-table))
              (next-ctx (compute-context-mask text (1+ k) len mode)))
         (setf curr-state-id (dfa-step-state dfa curr-state-id eq-cls next-ctx))
         (when (or (null curr-state-id) (< curr-state-id 0)) ; попадание в тупик
-          (return (values last-accept-i last-accept-state-id))
+          (return (values last-accept-i curr-state-id))
         )
       )
     )
