@@ -12,5 +12,5 @@
       "regex-search-p: неверно установлены границы: left-bound = ~A, right-bound = ~A, (length text) = ~A"
                                                     left-bound right-bound (length text))
   )
-  (not (null (unanchored-direct-pass-to-first-terminal regex text left-bound right-bound)))                                  
+  (not (null (lazy-unanchored-direct-pass regex text left-bound right-bound)))                                  
 )
