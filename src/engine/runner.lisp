@@ -1,56 +1,6 @@
 (in-package :regex-library)
 
 ;; ==================================================================================
-;; Вспомогательные функции
-;; ==================================================================================
-
-(defun word-char-at-p (text idx len char-mode)
-  (and (>= idx 0)
-       (< idx len)
-       (word-char-p (char text idx) char-mode)
-  )
-)
-
-(defun compute-context-mask (text i len char-mode)
-  (let ((mask 0)
-        (prev-ch (when (> i 0) (char text (1- i))))
-        (curr-ch (when (< i len) (char text i))))
-    ;; 0 разряд: ^ (начало строки)
-    (when (or (= i 0) (and prev-ch (char-newline-p prev-ch)))
-      (setf mask (logior mask #b000001)))
-    ;; 1 разряд: \A (начало текста)
-    (when (= i 0)
-      (setf mask (logior mask #b000010)))
-    ;; 2 разряд: $ (конец строки)
-    (when (or (= i len) (and curr-ch (char-newline-p curr-ch)))
-      (setf mask (logior mask #b000100)))
-    ;; 3 разряд: \Z (почти конец текста)
-    (when (or (= i len)
-              (and (= i (1- len)) (char-newline-p curr-ch)))
-      (setf mask (logior mask #b001000)))
-    ;; 4 разряд: \z (конец текста)
-    (when (= i len)
-      (setf mask (logior mask #b010000)))
-    ;; 5 разряд: \b (граница слова)
-    (let ((prev-w (if (word-char-at-p text (1- i) len char-mode) 1 0))
-          (curr-w (if (word-char-at-p text i len char-mode) 1 0)))
-      (when (= (logxor prev-w curr-w) 1)
-        (setf mask (logior mask #b100000))))
-    mask
-  )
-)
-
-(declaim (inline compute-start-state-id))
-(defun compute-start-state-id (regex text idx &key unanchored-p)
-  (let* ((mode (regex-builtin-char-class-mode regex))
-        (len (length text))
-        (ctx (compute-context-mask text idx len mode))
-        (dfa (regex-direct-dfa regex)))
-    (dfa-get-start-state dfa ctx unanchored-p)
-  )
-)
-
-;; ==================================================================================
 ;; Прямые проходы
 ;; ==================================================================================
 ;; Ищут терминальное состояние на диапазоне [left-bound, right-bound] (включительно).
@@ -143,5 +93,55 @@
         )
       )
     )
+  )
+)
+
+;; ==================================================================================
+;; Вспомогательные функции
+;; ==================================================================================
+
+(defun word-char-at-p (text idx len char-mode)
+  (and (>= idx 0)
+       (< idx len)
+       (word-char-p (char text idx) char-mode)
+  )
+)
+
+(defun compute-context-mask (text i len char-mode)
+  (let ((mask 0)
+        (prev-ch (when (> i 0) (char text (1- i))))
+        (curr-ch (when (< i len) (char text i))))
+    ;; 0 разряд: ^ (начало строки)
+    (when (or (= i 0) (and prev-ch (char-newline-p prev-ch)))
+      (setf mask (logior mask #b000001)))
+    ;; 1 разряд: \A (начало текста)
+    (when (= i 0)
+      (setf mask (logior mask #b000010)))
+    ;; 2 разряд: $ (конец строки)
+    (when (or (= i len) (and curr-ch (char-newline-p curr-ch)))
+      (setf mask (logior mask #b000100)))
+    ;; 3 разряд: \Z (почти конец текста)
+    (when (or (= i len)
+              (and (= i (1- len)) (char-newline-p curr-ch)))
+      (setf mask (logior mask #b001000)))
+    ;; 4 разряд: \z (конец текста)
+    (when (= i len)
+      (setf mask (logior mask #b010000)))
+    ;; 5 разряд: \b (граница слова)
+    (let ((prev-w (if (word-char-at-p text (1- i) len char-mode) 1 0))
+          (curr-w (if (word-char-at-p text i len char-mode) 1 0)))
+      (when (= (logxor prev-w curr-w) 1)
+        (setf mask (logior mask #b100000))))
+    mask
+  )
+)
+
+(declaim (inline compute-start-state-id))
+(defun compute-start-state-id (regex text idx &key unanchored-p)
+  (let* ((mode (regex-builtin-char-class-mode regex))
+        (len (length text))
+        (ctx (compute-context-mask text idx len mode))
+        (dfa (regex-direct-dfa regex)))
+    (dfa-get-start-state dfa ctx unanchored-p)
   )
 )
