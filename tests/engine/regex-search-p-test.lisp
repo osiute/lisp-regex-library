@@ -6,12 +6,12 @@
 
 ;; Хелпер для проверки выполнения regex-search-p с заданными параметрами
 (defun check-search-p (assert-equal-fn pattern text expected
-                       &key (mode :unicode) left-bound right-bound)
+                       &key (mode :unicode) start end)
   (let* ((re (compile-regex pattern mode))
-         (actual (if (or left-bound right-bound)
+         (actual (if (or start end)
                      (regex-search-p re text
-                                     :left-bound (or left-bound 0)
-                                     :right-bound (or right-bound (length text)))
+                                     :start (or start 0)
+                                     :end (or end (length text)))
                      (regex-search-p re text)
                  )
          )
@@ -20,7 +20,7 @@
              (not (null actual))
              expected
              (format nil "Паттерн: '~A', Текст: '~A', Режим: ~A, Границы: [~A, ~A)"
-                     pattern text mode (or left-bound 0) (or right-bound (length text))
+                     pattern text mode (or start 0) (or end (length text))
              )
     )
   )
@@ -34,13 +34,13 @@
   ;; Позитивные тесты (подстрока существует)
   (check-search-p assert-equal-fn "abc" "abc" t)
   (check-search-p assert-equal-fn "abc" "hello abc world" t)
-  (check-search-p assert-equal-fn "abc" "123abc456" t :left-bound 3 :right-bound 6)
+  (check-search-p assert-equal-fn "abc" "123abc456" t :start 3 :end 7)
 
   ;; Негативные тесты (подстрока отсутствует)
   (check-search-p assert-equal-fn "abc" "ab" nil)
   (check-search-p assert-equal-fn "abc" "cba" nil)
   (check-search-p assert-equal-fn "abc" "" nil)
-  (check-search-p assert-equal-fn "abc" "123abc456" nil :left-bound 0 :right-bound 3)
+  (check-search-p assert-equal-fn "abc" "123abc456" nil :start 0 :end 4)
 )
 
 ;; ============================================================================

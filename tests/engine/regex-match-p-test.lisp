@@ -6,12 +6,12 @@
 
 ;; Хелпер для проверки выполнения regex-match-p через assert-true
 (defun check-match-p (assert-true-fn pattern text expected
-                      &key (mode :unicode) left-bound right-bound)
+                      &key (mode :unicode) start end)
   (let* ((re (compile-regex pattern mode))
-         (actual (if (or left-bound right-bound)
+         (actual (if (or start end)
                      (regex-match-p re text
-                                    :left-bound (or left-bound 0)
-                                    :right-bound (or right-bound (length text)))
+                                    :start (or start 0)
+                                    :end (or end (length text)))
                      (regex-match-p re text)
                  )
          )
@@ -45,7 +45,7 @@
 (defun test-regex-match-simple (assert-true-fn)
   ;; Позитивные тесты (полное совпадение)
   (check-match-p assert-true-fn "abc" "abc" t)
-  (check-match-p assert-true-fn "abc" "xxabcxx" t :left-bound 2 :right-bound 4)
+  (check-match-p assert-true-fn "abc" "xxabcxx" t :start 2 :end 5)
 
   ;; Негативные тесты (частичное совпадение не должно проходить match-p)
   (check-match-p assert-true-fn "abc" "xxabcxx" nil)
