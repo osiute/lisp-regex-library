@@ -118,6 +118,25 @@
 )
 
 ;; ============================================================================
+;; 6. Позиционные якоря (^, $, \A, \z, \b) для regex-search-p
+;; ============================================================================
+
+(defun test-search-p-with-anchors (assert-true-fn)
+  ;; Начало (^) и конец ($) строки/текста
+  (check-search-p assert-true-fn "^cat" "cat dog" t)
+  (check-search-p assert-true-fn "^dog" "cat dog" nil)
+  (check-search-p assert-true-fn "dog$" "cat dog" t)
+  (check-search-p assert-true-fn "cat$" "cat dog" nil)
+  ;; Абсолютное начало (\A) и конец (\z)
+  (check-search-p assert-true-fn "\\Astart" "start end" t)
+  (check-search-p assert-true-fn "\\Aend" "start end" nil)
+  (check-search-p assert-true-fn "end\\z" "start end" t)
+  ;; Границы слов (\b)
+  (check-search-p assert-true-fn "\\bword\\b" "a word here" t)
+  (check-search-p assert-true-fn "\\bword\\b" "awordhere" nil)
+)
+
+;; ============================================================================
 ;; Точка входа для запуска тестов модуля engine (regex-search-p)
 ;; ============================================================================
 
@@ -128,4 +147,5 @@
   (test-regex-search-builtins-pos #'assert-equal)
   (test-regex-search-builtins-neg #'assert-equal)
   (test-regex-search-complex #'assert-equal)
+  (test-search-p-with-anchors #'assert-equal)
 )
