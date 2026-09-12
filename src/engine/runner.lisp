@@ -15,7 +15,7 @@
 (defun lazy-unanchored-direct-pass (regex text left-bound right-bound
                                                  &key unanchored-state-id)
   (when (null unanchored-state-id)
-    (setf unanchored-state-id (compute-start-state-id regex text left-bound :unanchored-p t))
+    (setf unanchored-state-id (compute-direct-start-state-id regex text left-bound :unanchored-p t))
   )
   
   (direct-pass-logic regex text unanchored-state-id left-bound right-bound
@@ -25,7 +25,7 @@
 (defun greedy-anchored-direct-pass (regex text left-bound right-bound
                                     &key anchored-state-id)
   (when (null anchored-state-id)
-    (setf anchored-state-id (compute-start-state-id regex text left-bound :unanchored-p nil))
+    (setf anchored-state-id (compute-direct-start-state-id regex text left-bound :unanchored-p nil))
   )
 
   (direct-pass-logic regex text anchored-state-id left-bound right-bound
@@ -35,7 +35,7 @@
 (defun lazy-anchored-direct-pass (regex text left-bound right-bound
                                   &key anchored-state-id)
   (when (null anchored-state-id)
-    (setf anchored-state-id (compute-start-state-id regex text left-bound :unanchored-p nil))
+    (setf anchored-state-id (compute-direct-start-state-id regex text left-bound :unanchored-p nil))
   )
 
   (direct-pass-logic regex text anchored-state-id left-bound right-bound
@@ -46,6 +46,25 @@
 ;; Обратный проход
 ;; ==================================================================================
 
+(defun greedy-unanchored-reverse-pass (regex text left-bound right-bound
+                                       &key unanchored-state-id)
+  (when (null unanchored-state-id)
+    (setf unanchored-state-id (compute-reverse-start-state-id regex text left-bound :unanchored-p t))
+  )
+
+  (reverse-pass-logic regex text unanchored-state-id left-bound right-bound
+                    :return-on-first-terminal-p nil)                                       
+)
+
+(defun greedy-anchored-reverse-pass (regex text left-bound right-bound
+                                     &key anchored-state-id)
+  (when (null anchored-state-id)
+    (setf anchored-state-id (compute-reverse-start-state-id regex text left-bound :unanchored-p nil))
+  )                                     
+
+  (reverse-pass-logic regex text anchored-state-id left-bound right-bound
+                    :return-on-first-terminal-p nil)                       
+)                                     
 
 ;; ==================================================================================
 ;; Основаная логика
@@ -96,6 +115,53 @@
   )
 )
 
+;; Ищет терминальное состояние при обратном проходе на диапазоне [left-bound, right-bound] (справа налево).
+;; return-on-first-terminal-p определяет жадность поиска.
+;; Возвращает (values text-idx last-state-id) или (values nil last-state-id),
+;; где last-state-id указывает на состояние, на котором ЗАВЕРШИЛСЯ ПРОХОД, а НЕ на последнее терминальное состояние.
+;; Если терминальное состояние не встретилось, возвращает (values nil last-state-id).
+;; Если взятое начальное состояние сразу оказалось терминальным (единственным или первым в зависимости от return-on-first-terminal-p) 
+;; (например, для pattern=""), возращает (values right-bound + 1 dfa-state-id).
+(defun reverse-pass-logic (regex text start-state-id left-bound right-bound
+                                   &key return-on-first-terminal-p)
+  (if (= right-bound (1- left-bound)) ; пустая подстрока
+    (assert (< right-bound (length text)) ()
+      "reverse-pass-logic: left-bound = ~A, right-bound = ~A, (length text) = ~A. Я НАПИСАЛ УЖАСНУЮ ПРОГРАММУ!!! ЭТА ФУНКЦИЯ ДОЛЖНА ВЫЗЫВАТЬСЯ С ПРАВИЛЬНЫМИ ГРАНИЦАМИ."
+                                                    left-bound right-bound (length text))
+    (assert (and (>= right-bound left-bound) (< right-bound (length text))) ()
+      "reverse-pass-logic: left-bound = ~A, right-bound = ~A, (length text) = ~A. Я НАПИСАЛ УЖАСНУЮ ПРОГРАММУ!!! ЭТА ФУНКЦИЯ ДОЛЖНА ВЫЗЫВАТЬСЯ С ПРАВИЛЬНЫМИ ГРАНИЦАМИ."
+                                                    left-bound right-bound (length text))
+  )
+  
+  (let* ((dfa (regex-reversed-dfa regex))
+         (mode (regex-builtin-char-class-mode regex))
+         (len (length text))
+         (eq-table (regex-eq-classes-table regex))
+         (curr-state-id start-state-id)
+         (last-accept-i nil))
+    
+    (loop for k from right-bound downto (1- left-bound) do
+      (when (dfa-accept-state-p dfa curr-state-id)
+        (setf last-accept-i (1+ k)) ; +1, т.к. при движении назад совпадение начинается на 1+ k
+        (when return-on-first-terminal-p
+          (return (values last-accept-i curr-state-id))
+        )
+      )
+      (when (= k (1- left-bound))
+        (return (values last-accept-i curr-state-id))
+      )
+      (let* ((ch (char text k))
+             (eq-cls (char-to-class-id ch eq-table))
+             (next-ctx (compute-context-mask text k len mode)))
+        (setf curr-state-id (dfa-step-state dfa curr-state-id eq-cls next-ctx))
+        (when (or (null curr-state-id) (< curr-state-id 0)) ; попадание в тупик
+          (return (values last-accept-i curr-state-id))
+        )
+      )
+    )
+  )
+)
+
 ;; ==================================================================================
 ;; Вспомогательные функции
 ;; ==================================================================================
@@ -136,12 +202,22 @@
   )
 )
 
-(declaim (inline compute-start-state-id))
-(defun compute-start-state-id (regex text idx &key unanchored-p)
+(declaim (inline compute-direct-start-state-id))
+(defun compute-direct-start-state-id (regex text idx &key unanchored-p)
   (let* ((mode (regex-builtin-char-class-mode regex))
         (len (length text))
         (ctx (compute-context-mask text idx len mode))
         (dfa (regex-direct-dfa regex)))
+    (dfa-get-start-state dfa ctx unanchored-p)
+  )
+)
+
+(declaim (inline compute-reverse-start-state-id))
+(defun compute-reverse-start-state-id (regex text idx &key unanchored-p)
+  (let* ((mode (regex-builtin-char-class-mode regex))
+        (len (length text))
+        (ctx (compute-context-mask text idx len mode))
+        (dfa (regex-reversed-dfa regex)))
     (dfa-get-start-state dfa ctx unanchored-p)
   )
 )
