@@ -83,9 +83,9 @@
   (run-start-states-tests)
   (run-cache-tests)
   (run-dfa-tests)
-  (run-regex-search-p-tests)
-  (run-regex-match-p-tests)
-  (run-regex-find-first-tests)
+  (run-contains-p-tests)
+  (run-match-p-tests)
+  (run-first-match-span-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")  
 )
 

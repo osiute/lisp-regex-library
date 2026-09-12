@@ -1,18 +1,18 @@
 (in-package :regex-library)
 
 ;; ============================================================================
-;; Вспомогательные функции для тестирования regex-match-p
+;; Вспомогательные функции для тестирования match-p
 ;; ============================================================================
 
-;; Хелпер для проверки выполнения regex-match-p через assert-true
+;; Хелпер для проверки выполнения match-p через assert-true
 (defun check-match-p (assert-true-fn pattern text expected
                       &key (mode :unicode) start end)
   (let* ((re (compile-regex pattern mode))
          (actual (if (or start end)
-                     (regex-match-p re text
+                     (match-p re text
                                     :start (or start 0)
                                     :end (or end (length text)))
-                     (regex-match-p re text)
+                     (match-p re text)
                  )
          )
          (matched-p (not (null actual)))
@@ -27,7 +27,7 @@
 ;; 0. Пустая строка и пустые выражения
 ;; ============================================================================
 
-(defun test-regex-match-empty (assert-true-fn)
+(defun test-match-empty (assert-true-fn)
   ;; Позитивные тесты
   (check-match-p assert-true-fn "" "" t)
   (check-match-p assert-true-fn "a*" "" t)
@@ -42,7 +42,7 @@
 ;; 1. Простые выражения ("abc")
 ;; ============================================================================
 
-(defun test-regex-match-simple (assert-true-fn)
+(defun test-match-simple (assert-true-fn)
   ;; Позитивные тесты (полное совпадение)
   (check-match-p assert-true-fn "abc" "abc" t)
   (check-match-p assert-true-fn "abc" "xxabcxx" t :start 2 :end 5)
@@ -57,7 +57,7 @@
 ;; 2. Альтернация ("abc|bcde", "абв|эюя", "012345|234")
 ;; ============================================================================
 
-(defun test-regex-match-alternation (assert-true-fn)
+(defun test-match-alternation (assert-true-fn)
   ;; Позитивные тесты
   (check-match-p assert-true-fn "abc|bcde" "abc" t)
   (check-match-p assert-true-fn "abc|bcde" "bcde" t)
@@ -74,7 +74,7 @@
 ;; 3. Квантификаторы ("(abcde)+", "(авфы)*", "[0-9a-z]{5}", "[0-9a-z]{3,5}", "\w?")
 ;; ============================================================================
 
-(defun test-regex-match-quantifiers (assert-true-fn)
+(defun test-match-quantifiers (assert-true-fn)
   ;; Позитивные тесты
   (check-match-p assert-true-fn "(abcde)+" "abcdeabcde" t)
   (check-match-p assert-true-fn "(авфы)*" "авфыавфы" t :mode :unicode)
@@ -93,7 +93,7 @@
 ;; 4. Встроенные символы и Юникод (\w, \s, \S, \W, \d, \D, \uXXXX, \u{XXXXXX}, .)
 ;; ============================================================================
 
-(defun test-regex-match-builtins-pos (assert-true-fn)
+(defun test-match-builtins-pos (assert-true-fn)
   ;; Позитивные тесты
   (check-match-p assert-true-fn "\\w+" "тест" t :mode :unicode)
   (check-match-p assert-true-fn "\\d+" "12345" t)
@@ -105,7 +105,7 @@
   (check-match-p assert-true-fn "." "x" t)
 )
 
-(defun test-regex-match-builtins-neg (assert-true-fn)
+(defun test-match-builtins-neg (assert-true-fn)
   ;; Негативные тесты
   (check-match-p assert-true-fn "\\w+" "тест" nil :mode :ascii)
   (check-match-p assert-true-fn "\\d+" "val: 42" nil)
@@ -118,7 +118,7 @@
 ;; 5. Сложные комбинированные выражения
 ;; ============================================================================
 
-(defun test-regex-match-complex (assert-true-fn)
+(defun test-match-complex (assert-true-fn)
   ;; Позитивные тесты
   (check-match-p assert-true-fn "\\w+@\\w+\\.\\w+" "user@domain.com" t :mode :ascii)
   (check-match-p assert-true-fn "\\w+@\\w+\\.\\w+" "админ@домен.рф" t :mode :unicode)
@@ -130,15 +130,15 @@
 )
 
 ;; ============================================================================
-;; Точка входа для запуска тестов модуля engine (regex-match-p)
+;; Точка входа для запуска тестов модуля engine (match-p)
 ;; ============================================================================
 
-(deftest run-regex-match-p-tests "engine/regex-match-p"
-  (test-regex-match-empty #'assert-true)
-  (test-regex-match-simple #'assert-true)
-  (test-regex-match-alternation #'assert-true)
-  (test-regex-match-quantifiers #'assert-true)
-  (test-regex-match-builtins-pos #'assert-true)
-  (test-regex-match-builtins-neg #'assert-true)
-  (test-regex-match-complex #'assert-true)
+(deftest run-match-p-tests "engine/match-p"
+  (test-match-empty #'assert-true)
+  (test-match-simple #'assert-true)
+  (test-match-alternation #'assert-true)
+  (test-match-quantifiers #'assert-true)
+  (test-match-builtins-pos #'assert-true)
+  (test-match-builtins-neg #'assert-true)
+  (test-match-complex #'assert-true)
 )

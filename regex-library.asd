@@ -3,9 +3,9 @@
   :author "Tikhon"
   :license "MIT"
   :description "Regular expression library in Common Lisp (SBCL) with guaranteed O(N) linear search complexity using Lazy DFA and Unicode equivalence classes."
-  :components ((:file "packages")
+  :components ((:file "package")
                (:module "src"
-                :depends-on ("packages")
+                :depends-on ("package")
                 :components ((:module "ast"
                               :components ((:file "ast")
                                            (:file "ast-printer" :depends-on ("ast"))
@@ -91,11 +91,11 @@
                                 (:file "dfa-test")
                   ))
                   (:module "engine"
-                  :components ((:file "regex-search-p-test")
-                               (:file "regex-match-p-test")
-                               (:file "regex-find-first-match-bounds-test")
-                               (:file "make-regex-match-bounds-iterator-test")
-                               (:file "regex-split-test")
-                               (:file "regex-replace-all-test"))))))
+                  :components ((:file "contains-p-test")
+                               (:file "match-p-test")
+                               (:file "first-match-span-test")
+                               (:file "all-match-spans-test")
+                               (:file "split-test")
+                               (:file "replace-all-test"))))))
   :perform (asdf:test-op (op c)
              (uiop:symbol-call :regex-library/tests :#run-tests)))

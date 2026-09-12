@@ -1,18 +1,28 @@
-;; regex-match-p, regex-search-p
 (in-package :regex-library)
 
-(defun regex-search-p (regex text &key start end)
-  (when (null start) (setf start 0))
-  (when (null end) (setf end (length text)))
-  (assert-bounds (length text) start end "regex-search-p")
+(defun contains-p (regex text &key (start 0) (end (length text)))
+  "Возвращает T, если на участке строки TEXT в полуинтервале [START, END)
+  существует хотя бы одна подстрока, соответствующая регулярному выражению REGEX, иначе — NIL.
+
+  REGEX — скомпилированное регулярное выражение (объект REGEX).
+  TEXT — строка для проверки.
+  START, END — границы проверяемого полуинтервала [START, END).
+  По умолчанию проверяется вся строка (START = 0, END = (LENGTH TEXT))."
+
+  (assert-bounds (length text) start end "contains-p")
   (not (null (lazy-unanchored-direct-pass regex text start (1- end)))) ; во внутренней реализации right-bound включается в диапазон                                  
 )
 
-(defun regex-match-p (regex text &key start end)
-  (when (null start) (setf start 0))
-  (when (null end) (setf end (length text)))
-  (assert-bounds (length text) start end "regex-match-p")
-  (let ((k (greedy-anchored-direct-pass regex text start (1- end)))) ; во внутренней реализации right-bound включается в диапазон
+(defun match-p (regex text &key (start 0) (end (length text)))
+  "Возвращает T, если весь участок строки TEXT в полуинтервале [START, END) полностью
+  соответствует регулярному выражению REGEX, иначе — NIL.
+
+  REGEX — скомпилированное регулярное выражение (объект REGEX).
+  TEXT — строка для проверки.
+  START, END — границы проверяемого полуинтервала [START, END).
+  По умолчанию проверяется вся строка (START = 0, END = (LENGTH TEXT))."
+  (assert-bounds (length text) start end "match-p")
+  (let ((k (greedy-anchored-direct-pass regex text start (1- end))))
     (and k (= k (1- end)))
   )
 )

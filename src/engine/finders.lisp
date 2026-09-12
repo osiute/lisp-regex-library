@@ -1,16 +1,25 @@
-;; regex-find-first, regex-find-last, regex-find-all
 (in-package :regex-library)
 
-;; Возвращает пару (match-start . match-end) для первого совпадения по семантике Leftmost или NIL, если совпадений нет.
-(defun regex-find-first-match-bounds (regex text &key start end shortest-p)
-  (when (null start) (setf start 0))
-  (when (null end) (setf end (length text)))
-  (assert-bounds (length text) start end "regex-find-first-match-bounds")
+(defun first-match-span (regex text &key (start 0) (end (length text)) shortest-p)
+  "Возвращает точечную пару (START-MATCH . END-MATCH) для первого совпадения REGEX в TEXT.
+  Если совпадение не найдено, возвращает NIL.
+
+  Поиск осуществляется на заданном полуинтервале [START, END) по семантике Leftmost
+  с учётом стратегии длины совпадения (SHORTEST-P).
+
+  REGEX — скомпилированное регулярное выражение (объект REGEX).
+  TEXT — строка для поиска.
+  START, END — границы полуинтервала [START, END), на котором осуществляется поиск.
+  SHORTEST-P — флаг выборки: NIL для поиска наидлиннейшего совпадения (Longest),
+                             T для поиска наикратчайшего (Shortest).
+  По умолчанию ищется самое длинное самое левое совпадение на диапазоне всей строки
+  (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL)."
+  (assert-bounds (length text) start end "first-match-span")
   (let ((left-bound start) (right-bound (1- end)))
     (multiple-value-bind (leftmost-k potential-rightest-end)
         (compute-leftmost-k-and-potential-rightest-end regex text left-bound right-bound)
       (when (not leftmost-k) 
-        (return-from regex-find-first-match-bounds nil)
+        (return-from first-match-span nil)
       )
       (let ((j
               (if shortest-p
