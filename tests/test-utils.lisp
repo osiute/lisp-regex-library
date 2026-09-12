@@ -85,6 +85,7 @@
   (run-dfa-tests)
   (run-regex-search-p-tests)
   (run-regex-match-p-tests)
+  (run-regex-find-first-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")  
 )
 

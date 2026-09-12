@@ -16,7 +16,7 @@
               (if shortest-p
                 (lazy-anchored-direct-pass regex text leftmost-k potential-rightest-end)
                 (greedy-anchored-direct-pass regex text leftmost-k potential-rightest-end))))
-        (values leftmost-k (1+ j)) ;; 1+, т.к. match-end не включается в диапазон
+        (cons leftmost-k (1+ j)) ;; 1+, т.к. match-end не включается в диапазон
       )
     )
   ) 
@@ -60,6 +60,9 @@
 )
 
 (defun compute-leftmost-k (regex text left-bound first-terminal-k pre)
+  (when (= first-terminal-k (1- left-bound)) ; Пустая строка
+    (return-from compute-leftmost-k left-bound)
+  )
   (let* ((last-state-id (nth-value 1 (greedy-unanchored-reverse-pass regex text first-terminal-k pre)))
          (dfa (regex-reversed-dfa regex))
          (anchored-state-id (get-dfa-state-id-without-unanchored-start dfa last-state-id))
