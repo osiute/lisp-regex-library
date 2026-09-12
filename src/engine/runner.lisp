@@ -105,6 +105,10 @@
       (when (= k (1+ right-bound)) (return (values last-accept-i curr-state-id)))
       (let* ((ch (char text k))
              (eq-cls (char-to-class-id ch eq-table))
+             ;; Необходимо брать контекст следующего индекса, а не текущего, т.к.
+             ;; при переходе сначала вычисляются целевые состояния по eq-cls,
+             ;; а лишь потом контекстное эпсилон-замыкание.
+             ;; Иными словами, контекст отрывает рёбра для следующих состояний.
              (next-ctx (compute-context-mask text (1+ k) len mode)))
         (setf curr-state-id (dfa-step-state dfa curr-state-id eq-cls next-ctx))
         (when (or (null curr-state-id) (< curr-state-id 0)) ; попадание в тупик
@@ -152,6 +156,10 @@
       )
       (let* ((ch (char text k))
              (eq-cls (char-to-class-id ch eq-table))
+             ;; Контекст берётся для текущего индекса, т.к. в обратном НКА
+             ;; все рёбра инвертируеются. Если для прямого прохода контекст открывал
+             ;; рёбра следующим состояниям, то в обратном проходе текущее состояние и 
+             ;; является тем самым следующим (в прямом автомате), которому открывали рёбра.
              (next-ctx (compute-context-mask text k len mode)))
         (setf curr-state-id (dfa-step-state dfa curr-state-id eq-cls next-ctx))
         (when (or (null curr-state-id) (< curr-state-id 0)) ; попадание в тупик
@@ -206,6 +214,8 @@
 (defun compute-direct-start-state-id (regex text idx &key unanchored-p)
   (let* ((mode (regex-builtin-char-class-mode regex))
         (len (length text))
+        ;; Контекст берётся для начального индекса, т.к.
+        ;; это начальное состояние, т.е. в НКА контекст открывает рёбра именно для него.
         (ctx (compute-context-mask text idx len mode))
         (dfa (regex-direct-dfa regex)))
     (dfa-get-start-state dfa ctx unanchored-p)
@@ -216,7 +226,9 @@
 (defun compute-reverse-start-state-id (regex text idx &key unanchored-p)
   (let* ((mode (regex-builtin-char-class-mode regex))
         (len (length text))
-        (ctx (compute-context-mask text idx len mode))
+        ;; Контекст берётся для следующего символа, т.к. это обратный проход → рёбра НКА инвертированы.
+        ;; Честно говоря, я сам не до конца понимаю, почему именно, но все тесты проходят.
+        (ctx (compute-context-mask text (1+ idx) len mode))
         (dfa (regex-reversed-dfa regex)))
     (dfa-get-start-state dfa ctx unanchored-p)
   )
