@@ -1,19 +1,22 @@
 (in-package :regex-library)
 
-(defun first-match-span (regex text &key (start 0) (end (length text)) shortest-p)
+(defun first-match-span (regex text &key (start 0) end shortest-p)
   "Возвращает точечную пару (START-MATCH . END-MATCH) для первого совпадения REGEX в TEXT.
   Если совпадение не найдено, возвращает NIL.
 
   Поиск осуществляется на заданном полуинтервале [START, END) по семантике Leftmost
   с учётом стратегии длины совпадения (SHORTEST-P).
 
-  REGEX — скомпилированное регулярное выражение (объект REGEX).
-  TEXT — строка для поиска.
-  START, END — границы полуинтервала [START, END), на котором осуществляется поиск.
-  SHORTEST-P — флаг выборки: NIL для поиска наидлиннейшего совпадения (Longest),
-                             T для поиска наикратчайшего (Shortest).
-  По умолчанию ищется самое длинное самое левое совпадение на диапазоне всей строки
-  (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL)."
+  REGEX — скомпилированное регулярное выражение (объект REGEX);
+  TEXT — строка для поиска;
+  START, END — границы полуинтервала [START, END), на котором осуществляется поиск;
+  SHORTEST-P — флаг выборки: NIL — для поиска наидлиннейшего совпадения (Longest),
+                             T — для поиска наикратчайшего (Shortest).
+  По умолчанию ищется самое левое самое длинное совпадение на диапазоне всей строки
+  (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
+  При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))"
+
+  (setf end (or end (length text)))
   (assert-bounds (length text) start end "first-match-span")
   (let ((left-bound start) (right-bound (1- end)))
     (multiple-value-bind (leftmost-k potential-rightest-end)
@@ -29,6 +32,114 @@
       )
     )
   ) 
+)
+
+(defun make-match-span-iterator (regex text &key (start 0) end shortest-p)
+  "Создаёт и возвращает генератор (замыкание), итерирующийся по всем совпадениям REGEX в TEXT.
+  Каждый вызов полученного генератора без аргументов возвращает очередной полуинтервал
+  (START-MATCH . END-MATCH) или NIL, когда совпадения закончились.
+
+  Поиск осуществляется на заданном полуинтервале [START, END) по семантике Leftmost
+  с учётом стратегии длины совпадения (SHORTEST-P).
+
+  REGEX — скомпилированное регулярное выражение (объект REGEX);
+  TEXT — строка для поиска;
+  START, END — границы полуинтервала [START, END), на котором осуществляется поиск;
+  SHORTEST-P — флаг выборки: NIL — для поиска наидлиннейшего совпадения (Longest),
+                             T — для поиска наикратчайшего (Shortest).
+  По умолчанию ищется самое левое самое длинное совпадение на диапазоне всей строки
+  (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
+  При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))"
+
+  (setf end (or end (length text)))
+  (assert-bounds (length text) start end "make-match-span-iterator")
+  (let ((current-start start)
+        (real-end end)
+        (finished-p nil))
+    (lambda ()
+      (unless finished-p
+      (block nil
+        (when (> current-start real-end)
+          (setf finished-p t)
+          (return)
+        )
+
+        (let ((span (first-match-span regex text :start current-start
+                                                 :end real-end
+                                                 :shortest-p shortest-p)))
+          (unless span
+            (setf finished-p t)
+            (return)
+          )
+          ;; Намеренный сдвиг левой границы на следующий индекс для пустых строк
+          (setf current-start (max (cdr span) (1+ (car span))))
+          (return span)
+        )
+      ))
+    )
+  )
+)
+
+(defmacro do-match-spans ((var regex text &key (start 0) end shortest-p) &body body)
+  "Выполняет последовательное итерирование по всем совпадениям REGEX в TEXT,
+  связывая переменную VAR с очередным полуинтервалом (START-MATCH . END-MATCH).
+
+  На каждом шаге итерации исполняется тело макроса BODY. Возвращает NIL.
+
+  VAR — символ переменной для связывания с точечной парой (START-MATCH . END-MATCH),
+        либо список из двух символов (START END) для автоматической деструктуризации границ;
+  REGEX — скомпилированное регулярное выражение (объект REGEX);
+  TEXT — строка для поиска;
+  START, END — границы полуинтервала [START, END), на котором осуществляется поиск;
+  SHORTEST-P — флаг выборки: NIL — для поиска наидлиннейшего совпадения (Longest),
+                             T — для поиска наикратчайшего (Shortest);
+  BODY — выражения, выполняемые на каждом шаге цикла.
+  По умолчанию ищется самое левое самое длинное совпадение на диапазоне всей строки
+  (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
+  При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))"
+
+  (let ((iter-sym (gensym "ITER-"))
+        (span-sym (gensym "SPAN-")))
+    `(let* ((,iter-sym (make-match-span-iterator ,regex ,text
+                                              :start ,start
+                                              :end ,end
+                                              :shortest-p ,shortest-p)))
+      (loop for ,span-sym = (funcall ,iter-sym)
+        while ,span-sym
+        do ,(if (listp var)
+          `(destructuring-bind ,var ,span-sym ,@body)
+          `(let ((,var ,span-sym)) ,@body)
+        )
+      )
+    )
+  )
+)
+
+(defun all-match-spans (regex text &key (start 0) end shortest-p)
+  "Возвращает список всех полуинтервалов (START-MATCH . END-MATCH) совпадений REGEX в TEXT.
+  Если совпадений нет, возвращает NIL.
+
+  Поиск осуществляется на заданном полуинтервале [START, END) по семантике Leftmost
+  с учётом стратегии длины совпадения (SHORTEST-P).
+
+  REGEX — скомпилированное регулярное выражение (объект REGEX).
+  TEXT — строка для поиска.
+  START, END — границы полуинтервала [START, END), на котором осуществляется поиск.
+  SHORTEST-P — флаг выборки: NIL для поиска наидлиннейших совпадений (Longest),
+                             T для поиска наикратчайших (Shortest).
+  По умолчанию ищуются все самые левые самые длинные совпадения на диапазоне всей строки
+  (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
+  При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))"
+
+  (let ((iter (make-match-span-iterator regex text
+                                        :start start
+                                        :end end
+                                        :shortest-p shortest-p)))
+    (loop for span = (funcall iter)
+          while span
+          collect span
+    )
+  )
 )
 
 ;; ========================================================

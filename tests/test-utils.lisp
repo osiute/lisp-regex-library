@@ -86,6 +86,7 @@
   (run-contains-p-tests)
   (run-match-p-tests)
   (run-first-match-span-tests)
+  (run-all-match-spans-tests)
   (format t "~%=== Все тесты были исполнены ===~%~%")  
 )
 
