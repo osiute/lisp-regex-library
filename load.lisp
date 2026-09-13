@@ -44,6 +44,7 @@
   (format t "~4T(run-match-p-tests)~%")
   (format t "~4T(run-first-match-span-tests)~%")
   (format t "~4T(run-all-match-spans-tests)~%")
+  (format t "~4T(run-split-tests)~%")
   
   (format t "--------------------------------------------------~%")
   (format t "Доступные команды:~%")

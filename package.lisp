@@ -9,9 +9,11 @@
     #:compile-regex         
     #:match-p               
     #:contains-p            
-    #:first-match-span ; (start-match . end-match) или nil для первого совпадения
-    #:all-match-spans ; Список всех ((s1 . e1) (s2 . e2) ...)
-    #:make-match-span-iterator ; Фабрика лексического замыкания-итератора
-    #:do-match-spans ; Макрос обхода по всем диапазонам
+    #:first-match-span 
+    #:all-match-spans 
+    #:make-match-span-iterator 
+    #:do-match-spans 
+    #:split
+    #:replace-all
   )
 )
