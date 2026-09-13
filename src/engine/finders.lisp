@@ -107,7 +107,11 @@
       (loop for ,span-sym = (funcall ,iter-sym)
         while ,span-sym
         do ,(if (listp var)
-          `(destructuring-bind ,var ,span-sym ,@body)
+          ;; Деструктуриразция полуинтервала в переданные символы
+          ;; через '(START END).
+          `(let ((,(first var) (car ,span-sym))
+                 (,(second var) (cdr ,span-sym)))
+            ,@body)
           `(let ((,var ,span-sym)) ,@body)
         )
       )
