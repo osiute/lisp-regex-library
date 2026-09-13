@@ -90,6 +90,7 @@
           (run-first-match-span-tests)
           (run-all-match-spans-tests)
           (run-split-tests)
+          (run-replace-all-tests)
         )))
     (if all-succeed-p
       (progn 
