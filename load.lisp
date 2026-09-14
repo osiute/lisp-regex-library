@@ -94,7 +94,7 @@
 
 (defun direct-nfa-dot (pattern &optional file-name)
   (when (null file-name)
-    (setf file-name "direct-nfa-dot")
+    (setf file-name "direct-nfa.dot")
   )
   (let ((nfa-to-output (create-nfa pattern)))
     (generate-dot-on-nfa nfa-to-output file-name)
