@@ -1,38 +1,45 @@
 (in-package :regex-library)
 
-(defun first-match-span (regex text &key (start 0) end shortest-p)
+(defun first-match-span (regex text &key (start 0) end shortest-p builtin-char-class-mode)
   "Возвращает точечную пару (START-MATCH . END-MATCH) для первого совпадения REGEX в TEXT.
   Если совпадение не найдено, возвращает NIL.
 
-  Поиск осуществляется на заданном полуинтервале [START, END) по семантике Leftmost
+  Поиск осуществляется на полуинтервале [START, END) по семантике Leftmost
   с учётом стратегии длины совпадения (SHORTEST-P).
 
-  REGEX — скомпилированное регулярное выражение (объект REGEX);
-  TEXT — строка для поиска;
-  START, END — границы полуинтервала [START, END), на котором осуществляется поиск;
-  SHORTEST-P — флаг выборки: NIL — для поиска наидлиннейшего совпадения (Longest),
-                             T — для поиска наикратчайшего (Shortest).
-  По умолчанию ищется самое левое самое длинное совпадение на диапазоне всей строки
-  (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
-  При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))"
+  Параметры:
+    REGEX — скомпилированный объект REGEX или строка с паттерном.
+    TEXT — строка для поиска.
+    START, END — границы полуинтервала [START, END). По умолчанию START = 0,
+      END = (LENGTH TEXT). Передача NIL в качестве END воспринимается как (LENGTH TEXT).
+    SHORTEST-P — стратегия выборки: NIL — для поиска наидлиннейшего совпадения (Longest),
+      T — для поиска наикратчайшего (Shortest). По умолчанию NIL.
+    BUILTIN-CHAR-CLASS-MODE — режим встроенных классов (\\d, \\w, \\s и т.д.): :unicode или :ascii.
+      Задаётся ТОЛЬКО если REGEX является строкой (по умолчанию :unicode). Если REGEX передаётся 
+      как скомпилированный объект, передача этого параметра вызовет ошибку.
 
-  (setf end (or end (length text)))
-  (assert-bounds (length text) start end 'first-match-span)
-  (multiple-value-bind (leftmost-start potential-rightest-end)
-      (compute-leftmost-start-and-potential-rightest-end regex text start end)
-    (when (not leftmost-start) 
-      (return-from first-match-span nil)
-    )
-    (let ((end-for-leftmost-occurence
-            (if shortest-p
-              (lazy-anchored-direct-pass regex text leftmost-start potential-rightest-end)
-              (greedy-anchored-direct-pass regex text leftmost-start potential-rightest-end))))
-      (cons leftmost-start end-for-leftmost-occurence)
-    )
-  ) 
+  Примечание: для многократного поиска по одному и тому же паттерну рекомендуется 
+  предварительно скомпилировать его через COMPILE-REGEX."
+
+  (let ((end (or end (length text)))
+        (regex (ensure-regex-object regex builtin-char-class-mode 'first-match-span)))
+    (assert-bounds (length text) start end 'first-match-span)
+    (multiple-value-bind (leftmost-start potential-rightest-end)
+        (compute-leftmost-start-and-potential-rightest-end regex text start end)
+      (when (not leftmost-start) 
+        (return-from first-match-span nil)
+      )
+      (let ((end-for-leftmost-occurrence
+              (if shortest-p
+                (lazy-anchored-direct-pass regex text leftmost-start potential-rightest-end)
+                (greedy-anchored-direct-pass regex text leftmost-start potential-rightest-end))))
+        (cons leftmost-start end-for-leftmost-occurrence)
+      )
+    ) 
+  )
 )
 
-(defun make-match-span-iterator (regex text &key (start 0) end shortest-p)
+(defun make-match-span-iterator (regex text &key (start 0) end shortest-p builtin-char-class-mode)
   "Создаёт и возвращает генератор (замыкание), итерирующийся по всем совпадениям REGEX в TEXT.
   Каждый вызов полученного генератора без аргументов возвращает очередной полуинтервал
   (START-MATCH . END-MATCH) или NIL, когда совпадения закончились.
@@ -40,45 +47,52 @@
   Поиск осуществляется на заданном полуинтервале [START, END) по семантике Leftmost
   с учётом стратегии длины совпадения (SHORTEST-P).
 
-  REGEX — скомпилированное регулярное выражение (объект REGEX);
-  TEXT — строка для поиска;
-  START, END — границы полуинтервала [START, END), на котором осуществляется поиск;
-  SHORTEST-P — флаг выборки: NIL — для поиска наидлиннейшего совпадения (Longest),
-                             T — для поиска наикратчайшего (Shortest).
+  Параметры:
+    REGEX — скомпилированный объект REGEX или строка с паттерном.
+    TEXT — строка для поиска;
+    START, END — границы полуинтервала [START, END), на котором осуществляется поиск;
+    SHORTEST-P — флаг выборки: NIL — для поиска наидлиннейшего совпадения (Longest),
+                               T — для поиска наикратчайшего (Shortest).
+    BUILTIN-CHAR-CLASS-MODE — режим встроенных классов (\\d, \\w, \\s и т.д.): :unicode или :ascii.
+      Задаётся ТОЛЬКО если REGEX является строкой (по умолчанию :unicode). Если REGEX передаётся
+      как скомпилированный объект, передача этого параметра вызовет ошибку.
+
   По умолчанию ищется самое левое самое длинное совпадение на диапазоне всей строки
   (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
-  При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))"
+  При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))."
 
-  (setf end (or end (length text)))
-  (assert-bounds (length text) start end 'make-match-span-iterator)
-  (let ((current-start start)
-        (real-end end)
-        (finished-p nil))
-    (lambda ()
-      (unless finished-p
-      (block nil
-        (when (> current-start real-end)
-          (setf finished-p t)
-          (return)
-        )
+  (let ((end (or end (length text)))
+        (regex (ensure-regex-object regex builtin-char-class-mode 'make-match-span-iterator)))
+    (assert-bounds (length text) start end 'make-match-span-iterator)
+    (let ((current-start start)
+          (real-end end)
+          (finished-p nil))
+      (lambda ()
+        (unless finished-p
+          (block nil
+            (when (> current-start real-end)
+              (setf finished-p t)
+              (return)
+            )
 
-        (let ((span (first-match-span regex text :start current-start
-                                                 :end real-end
-                                                 :shortest-p shortest-p)))
-          (unless span
-            (setf finished-p t)
-            (return)
-          )
-          ;; Намеренный сдвиг левой границы на следующий индекс для пустых строк
-          (setf current-start (max (cdr span) (1+ (car span))))
-          (return span)
-        )
-      ))
+            (let ((span (first-match-span regex text :start current-start
+                                                     :end real-end
+                                                     :shortest-p shortest-p)))
+              (unless span
+                (setf finished-p t)
+                (return)
+              )
+              ;; Намеренный сдвиг левой границы на следующий индекс для пустых строк
+              (setf current-start (max (cdr span) (1+ (car span))))
+              (return span)
+            )
+          ))
+      )
     )
   )
 )
 
-(defmacro do-match-spans ((var regex text &key (start 0) end shortest-p) &body body)
+(defmacro do-match-spans ((var regex text &key (start 0) end shortest-p builtin-char-class-mode) &body body)
   "Выполняет последовательное итерирование по всем совпадениям REGEX в TEXT,
   связывая переменную VAR с очередным полуинтервалом (START-MATCH . END-MATCH).
 
@@ -86,11 +100,14 @@
 
   VAR — символ переменной для связывания с точечной парой (START-MATCH . END-MATCH),
         либо список из двух символов (START END) для автоматической деструктуризации границ;
-  REGEX — скомпилированное регулярное выражение (объект REGEX);
+  REGEX — скомпилированное регулярное выражение (объект REGEX) или строка с паттерном;
   TEXT — строка для поиска;
   START, END — границы полуинтервала [START, END), на котором осуществляется поиск;
   SHORTEST-P — флаг выборки: NIL — для поиска наидлиннейшего совпадения (Longest),
                              T — для поиска наикратчайшего (Shortest);
+  BUILTIN-CHAR-CLASS-MODE — режим встроенных классов (\\d, \\w, \\s и т.д.): :unicode или :ascii.
+    Задаётся ТОЛЬКО если REGEX является строкой (по умолчанию :unicode). Если REGEX передаётся
+    как скомпилированный объект, передача этого параметра вызовет ошибку;
   BODY — выражения, выполняемые на каждом шаге цикла.
   По умолчанию ищется самое левое самое длинное совпадение на диапазоне всей строки
   (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
@@ -101,7 +118,8 @@
     `(let* ((,iter-sym (make-match-span-iterator ,regex ,text
                                               :start ,start
                                               :end ,end
-                                              :shortest-p ,shortest-p)))
+                                              :shortest-p ,shortest-p
+                                              :builtin-char-class-mode ,builtin-char-class-mode)))
       (loop for ,span-sym = (funcall ,iter-sym)
         while ,span-sym
         do ,(if (listp var)
@@ -117,29 +135,38 @@
   )
 )
 
-(defun all-match-spans (regex text &key (start 0) end shortest-p)
+(defun all-match-spans (regex text &key (start 0) end shortest-p builtin-char-class-mode)
   "Возвращает список всех полуинтервалов (START-MATCH . END-MATCH) совпадений REGEX в TEXT.
   Если совпадений нет, возвращает NIL.
 
   Поиск осуществляется на заданном полуинтервале [START, END) по семантике Leftmost
   с учётом стратегии длины совпадения (SHORTEST-P).
 
-  REGEX — скомпилированное регулярное выражение (объект REGEX).
-  TEXT — строка для поиска.
-  START, END — границы полуинтервала [START, END), на котором осуществляется поиск.
-  SHORTEST-P — флаг выборки: NIL для поиска наидлиннейших совпадений (Longest),
-                             T для поиска наикратчайших (Shortest).
+  Параметры:
+    REGEX — скомпилированный объект REGEX или строка с паттерном.
+    TEXT — строка для поиска.
+    START, END — границы полуинтервала [START, END), на котором осуществляется поиск.
+    SHORTEST-P — флаг выборки: NIL для поиска наидлиннейших совпадений (Longest),
+                               T для поиска наикратчайших (Shortest).
+    BUILTIN-CHAR-CLASS-MODE — режим встроенных классов (\\d, \\w, \\s и т.д.): :unicode или :ascii.
+      Задаётся ТОЛЬКО если REGEX является строкой (по умолчанию :unicode). Если REGEX передаётся
+      как скомпилированный объект, передача этого параметра вызовет ошибку.
+
   По умолчанию ищуются все самые левые самые длинные совпадения на диапазоне всей строки
   (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
   При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))"
 
-  (let ((iter (make-match-span-iterator regex text
-                                        :start start
-                                        :end end
-                                        :shortest-p shortest-p)))
-    (loop for span = (funcall iter)
-          while span
-          collect span
+  (let ((end (or end (length text)))
+        (regex (ensure-regex-object regex builtin-char-class-mode 'all-match-spans)))
+    (assert-bounds (length text) start end 'all-match-spans)
+    (let ((iter (make-match-span-iterator regex text
+                                          :start start
+                                          :end end
+                                          :shortest-p shortest-p)))
+      (loop for span = (funcall iter)
+            while span
+            collect span
+      )
     )
   )
 )

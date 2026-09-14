@@ -51,6 +51,7 @@
                               :components
                               ((:file "compiler")
                               (:file "runner")
+                              (:file "api-utils")
                               (:file "predicates")
                               (:file "finders")
                               (:file "transform")))
