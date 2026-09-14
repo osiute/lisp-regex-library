@@ -8,8 +8,8 @@
   (make-dfa-instance nfa max-states)
 )
 
-(defun dfa-get-start-state (dfa context)
-  "Вычисляет стартовое состояние DFA с учётом CONTEXT.
+(defun dfa-get-start-state (dfa context unanchored-p)
+  "Вычисляет стартовое состояние DFA с учётом CONTEXT и UNANCHORED-P.
   Возвращает id (индекс в DFA-STATES) стартового состояния.
   DFA — объект структуры dfa;
   CONTEXT — 'fixnum, представляющий собой битовую маску контекста, где:
@@ -19,14 +19,15 @@
     3 разряд (----x---) — контекст абсолютного конца строки или сразу перед последним '\n', '\r',
     4 разряд (---x----) — контекст абсолютного конца строки,
     5 разряд (--x-----) — контекст границы слова.
+  UNANCHORED-P — 'boolean: если nil, то вычисляет стартовое состояние для привязанного ДКА, иначе — для непривязанного.
   "
-  (get-dfa-start-state! dfa context)
+  (get-dfa-start-state! dfa context :unanchored-p unanchored-p)
 )
 
 ;; Вычисляет целевое состояние ДКА для перехода, возвращая его id.
 (defun dfa-step-state (dfa cur-state-id class-id context)
   "Вычисляет целевое состояние перехода по CLASS-ID из CUR-STATE-ID для DFA с учётом CONTEXT.
-  Возвращает id (индекс в DFA-STATES) целевого состояния.
+  Возвращает id (индекс в DFA-STATES) целевого состояния. Возвращает -1 при попадании в тупик (dead state).
   DFA — объект структуры dfa;
   CUR-STATE-ID — fixnum, индекс в DFA-STATES состояния, из которого совершается переход;
   CLASS-ID — fixnum, класс эквивалентных символов, по которому совершается переход (label ребра ДКА);
@@ -39,6 +40,17 @@
     5 разряд (--x-----) — контекст границы слова;
   "
   (dfa-step dfa cur-state-id class-id context)
+)
+
+(defun dfa-get-state (dfa nfa-set)
+  "Вычисляет состояние ДКА по NFA-SET.
+  Возвращает id (индекс в DFA-STATES) целевого состояния.
+  NFA-SET — каноническое множество индексов состояний НКА;
+  DFA — объект dfa.
+  "
+  (declare (type (simple-array fixnum (*)) nfa-set))
+  (ensure-cache-space! dfa)
+  (get-or-register-dfa-state! dfa nfa-set)
 )
 
 (declaim (inline dfa-accept-state-p))

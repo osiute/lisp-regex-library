@@ -56,11 +56,16 @@
 )
 
 (defun reverse-nfa (nfa-to-reverse)
-  "Принимает NFA-TO-REVERSE (объект структуры nfa) и возвращает новый объект nfa с инвертированным направлением всех рёбер"
- (let ((reversed-nfa (make-raw-reversed-nfa nfa-to-reverse))
-        (orig-states (nfa-states nfa-to-reverse)))
-    (dotimes (src (length orig-states))
-      (reverse-state-edges! reversed-nfa src (aref orig-states src))
+  "Принимает NFA-TO-REVERSE (объект структуры nfa) и возвращает новый объект nfa с инвертированным направлением всех рёбер,
+  кроме рёбер unanchored-start-state: он содержит изменяет target своего эпсилон-перехода на новый anchored-start-state (предыдущий end-state)."
+ (let* ((reversed-nfa (make-raw-reversed-nfa nfa-to-reverse))
+        (orig-states (nfa-states nfa-to-reverse))
+        (unanchored-start-id (nfa-unanchored-start-state reversed-nfa)))
+    (dotimes (src-state-id (length orig-states))
+      (if (= src-state-id unanchored-start-id)
+        (reverse-unanchored-start-state! reversed-nfa unanchored-start-id)
+        (reverse-state-edges! reversed-nfa src-state-id (aref orig-states src-state-id))
+      )
     )
     reversed-nfa
   )

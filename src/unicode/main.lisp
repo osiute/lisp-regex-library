@@ -11,3 +11,11 @@
     )
   )
 )
+
+(defun char-to-class-id (char eq-table)
+  "Возвращает Class ID для символа по объекту equivalence-table"
+  (let ((code (char-code char))
+        (vec (equivalence-table-endpoints eq-table)))
+    (binary-search-class-id code vec)
+  )
+)

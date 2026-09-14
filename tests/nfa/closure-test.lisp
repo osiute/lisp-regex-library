@@ -7,7 +7,7 @@
             (mapcar (lambda (e)
                       (make-nfa-edge :label (first e) :target (second e)))
                     (nth i states-edges-list))))
-    (make-nfa :states vec :start-state 0 :accept-state (1- (length states-edges-list)))))
+    (make-nfa :states vec :anchored-start-state 0 :accept-state (1- (length states-edges-list)))))
 
 (defun make-test-buffers (nfa-size)
   (values (make-array (max 16 (* nfa-size 2)) :element-type 'fixnum :fill-pointer 0 :adjustable t)

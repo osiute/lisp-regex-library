@@ -104,12 +104,13 @@
 )
 
 ;; Вычисляет все переходы из множества состояний initial-states по class-id.
+;; Непривязанное стартовое состояние однозначно будет включено в переходы, если находится в initial-states.
 ;; Возвращает новый отсортированный статический вектор fixnum состояний.
 (defun class-id-transitions (nfa initial-states class-id queue visited)
   (reset-work-collections! queue visited)
   (loop for initial-state across initial-states do
     (dolist (edge (aref (nfa-states nfa) initial-state))
-      (when (eql (nfa-edge-label edge) class-id)
+      (when (or (eql (nfa-edge-label edge) :any-class-id) (eql (nfa-edge-label edge) class-id))
         (let ((target (nfa-edge-target edge)))
           (check-or-add-target-state! target queue visited)
         )

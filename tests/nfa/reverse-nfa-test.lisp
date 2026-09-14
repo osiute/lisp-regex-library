@@ -24,7 +24,7 @@
 
 ;; Проверяет два НКА на структурную эквивалентность
 (defun nfa-structurally-equal-p (nfa1 nfa2)
-  (and (= (nfa-start-state nfa1) (nfa-start-state nfa2))
+  (and (= (nfa-anchored-start-state nfa1) (nfa-anchored-start-state nfa2))
        (= (nfa-accept-state nfa1) (nfa-accept-state nfa2))
        (= (length (nfa-states nfa1)) (length (nfa-states nfa2)))
        (dotimes (i (length (nfa-states nfa1)) t)
@@ -69,7 +69,7 @@
                                              '((:epsilon 0))
                                              '((10 1))
                                              '((:anchor-start 2)))
-                             :start-state 3
+                             :anchored-start-state 3
                              :accept-state 0))
          (rev (reverse-nfa orig)))
     ;; Приводим элементы expected к nfa-edge структуры для корректности
@@ -91,7 +91,7 @@
                                  ((:epsilon 3)) )))
          (rev (reverse-nfa orig)))
     (funcall assert-true-fn
-             (and (= (nfa-start-state rev) 3)
+             (and (= (nfa-anchored-start-state rev) 3)
                   (= (nfa-accept-state rev) 0)
                   ;; Из состояния 3 в реверсивном НКА должно быть 3 исходящих ребра: в 1, 2 и 3
                   (= (length (aref (nfa-states rev) 3)) 3)

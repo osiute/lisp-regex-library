@@ -1,23 +1,6 @@
 ;; Реализует парсинг символьных классов ([a-z], [^0-9], \d, \w, \s) и экранированных символов (\\, \|, \uXXXX и т.д.)
 (in-package :regex-library)
 
-;; Возвращает диапазоны для спецклассов \d, \w, \s в формате ((start . end)...)
-(defun get-builtin-char-class-ranges (ch)
-  (case ch
-    ((#\d #\D) (list (cons #\0 #\9)))
-    ((#\w #\W) (list (cons #\a #\z)
-               (cons #\A #\Z)
-               (cons #\0 #\9)
-               (cons #\_ #\_)))
-    ((#\s #\S) (list (cons #\Space #\Space)
-               (cons #\Tab #\Tab)
-               (cons #\Page #\Page)
-               (cons (code-char 10) (code-char 10))
-               (cons (code-char 13) (code-char 13))))
-    (t nil)
-  )
-)
-
 (defun get-escaped-anchor-type (ch)
   (case ch
     (#\b :word-boundary)
@@ -40,20 +23,22 @@
   )
 )
 
+(declaim (inline builtin-capital-p))
 (defun builtin-capital-p (ch)
   (or (eql ch #\D) (eql ch #\W) (eql ch #\S))
 )
 
 ;; Парсит экранированный спецкласс (\d, \w, \s), обычный экранированный символ (\., \\, \| и т.д.),
-;; управляющий символ (\n, \r, \t), юникод-символ (uXXXX, u{X+}) или якоря \b, \B, \A, \z, \Z
-(defun parse-escape-char-class (state)
+;; управляющий символ (\n, \r, \t), юникод-символ (uXXXX, u{X+}) или якоря \b, \B, \A, \z, \Z.
+;; builtin-char-class-mode — либо :unicode, либо :ascii.
+(defun parse-escape-char-class (state builtin-char-class-mode)
   (parser-next state) ; пропускаем '\'
   (let ((escaped (parser-next state)))
     (unless escaped
       (error "Синтаксическая ошибка: незавершённая escape-последовательность в позиции ~A"
              (parser-state-index state))
     )
-    (let ((builtin-ranges (get-builtin-char-class-ranges escaped))
+    (let ((builtin-ranges (get-builtin-char-class-ranges escaped builtin-char-class-mode))
           (escaped-anchor-type (get-escaped-anchor-type escaped)))
       (cond
         ((and builtin-ranges (builtin-capital-p escaped)) ; \D, \W, \S

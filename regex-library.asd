@@ -3,16 +3,17 @@
   :author "Tikhon"
   :license "MIT"
   :description "Regular expression library in Common Lisp (SBCL) with guaranteed O(N) linear search complexity using Lazy DFA and Unicode equivalence classes."
-  :components ((:file "packages")
+  :components ((:file "package")
                (:module "src"
-                :depends-on ("packages")
+                :depends-on ("package")
                 :components ((:module "ast"
                               :components ((:file "ast")
                                            (:file "ast-printer" :depends-on ("ast"))
                               )
                             )
+                            (:file "builtin-char-classes")
                              (:module "parser"
-                              :depends-on ("ast")
+                              :depends-on ("ast" "builtin-char-classes")
                               :components ((:file "state")
                                            (:file "range-quantifier" :depends-on ("state"))
                                            (:file "unicode-char" :depends-on ("state"))
@@ -44,7 +45,17 @@
                                            (:file "start-states" :depends-on ("dfa" "state-registry" "cache"))
                                            (:file "step" :depends-on ("dfa" "state-registry" "cache"))
                                            (:file "main" :depends-on ("dfa" "state-registry" "start-states" "step" "cache"))))
-                             (:file "engine"  :depends-on ("parser" "unicode" "nfa" "dfa")))))
+                             (:module "engine"
+                              :depends-on ("ast" "builtin-char-classes" "parser" "unicode" "nfa" "dfa")
+                              :serial t
+                              :components
+                              ((:file "compiler")
+                              (:file "runner")
+                              (:file "api-utils")
+                              (:file "predicates")
+                              (:file "finders")
+                              (:file "transform")))
+                             )))
   :in-order-to ((asdf:test-op (asdf:test-op "regex-library/tests"))))
 
 (asdf:defsystem "regex-library/tests"
@@ -80,6 +91,12 @@
                                 (:file "cache-test")
                                 (:file "dfa-test")
                   ))
-                )))
+                  (:module "engine"
+                  :components ((:file "contains-p-test")
+                               (:file "matches-p-test")
+                               (:file "first-match-span-test")
+                               (:file "all-match-spans-test")
+                               (:file "split-test")
+                               (:file "replace-all-test"))))))
   :perform (asdf:test-op (op c)
              (uiop:symbol-call :regex-library/tests :#run-tests)))

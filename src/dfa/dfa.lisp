@@ -21,9 +21,9 @@
   (state-map (make-hash-table :test 'equalp) :type hash-table)
   ;; Вектор сгенерированных состояний dfa-state (индекс массива = id состояния)
   (states (make-array 16 :adjustable t :fill-pointer 0) :type vector)
-  ;; Вектор ID стартовых состояний для 64 масок контекста (-1 = не вычислено)
-  (start-states (make-array 64 :element-type 'fixnum :initial-element -1)
-                :type (simple-array fixnum (64)))
+  ;; Вектор ID стартовых состояний для 64 масок контекста (-1 = не вычислено), 2 типов автомата (привязанный, непривязанный)
+  (start-states (make-array 128 :element-type 'fixnum :initial-element -1)
+                :type (simple-array fixnum (128)))
   ;; Максимально допустимое число состояний до полного сброса кэша
   (max-states 1000 :type fixnum)
   ;; Выделенные заранее буферы для compute-nfa-closure и compute-nfa-transitions (для избегания аллокаций)

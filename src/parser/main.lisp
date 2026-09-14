@@ -1,10 +1,10 @@
 ;; Публичный интефрейс модуля парсера
 (in-package :regex-library)
 
-(defun parse-regex (pattern)
+(defun parse-regex (pattern &key (builtin-char-class-mode :ascii))
   "Принимает строку PATTERN и возвращает построенное по нему AST-дерево как ast-node"
   (let ((state (make-parser-state :str pattern :len (length pattern))))
-    (let ((ast (parse-expression state)))
+    (let ((ast (parse-expression state builtin-char-class-mode)))
       (when (parser-peek state)
         (error "Синтаксическая ошибка: неожиданный символ ~A в позиции ~A"
                                         (parser-peek state)
