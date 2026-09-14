@@ -2,13 +2,27 @@
 
 (defstruct (regex
              (:constructor %make-regex)
-             (:copier nil))
+             (:copier nil)
+             (:print-object print-regex))
   "Скомпилированное регулярное выражение."
   (pattern "" :type string :read-only t)
   (builtin-char-class-mode :ascii :type symbol :read-only t)
   (direct-dfa nil :read-only t)
   (reversed-dfa nil :read-only t)
   (eq-classes-table nil :read-only t)
+)
+
+(defun print-regex (obj stream)
+  (if *print-escape*
+    ;; Для REPL и ~S: выводит #<REGEX "pattern" :UNICODE>
+    (print-unreadable-object (obj stream :type t)
+      (format stream "~S ~S"
+              (regex-pattern obj)
+              (regex-builtin-char-class-mode obj)))
+    
+    ;; Для ~A (princ): выводит паттерн
+    (write-string (regex-pattern obj) stream)
+  )
 )
 
 (defun compile-regex (pattern builtin-char-class-mode &key (max-dfa-states 1000))
