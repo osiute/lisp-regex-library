@@ -91,6 +91,7 @@
           (run-all-match-spans-tests)
           (run-split-tests)
           (run-replace-all-tests)
+          (run-count-disjoint-matches-tests)
         )))
     (if all-succeed-p
       (progn 

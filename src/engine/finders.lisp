@@ -171,6 +171,40 @@
   )
 )
 
+(defun count-disjoint-matches (regex text &key (start 0) end shortest-p builtin-char-class-mode)
+  "Возвращает неотрицательное целое число — количество непересекающихся совпадений REGEX в TEXT.
+  Если совпадений нет, возвращает 0.
+
+  Поиск осуществляется на заданном полуинтервале [START, END) по семантике Leftmost
+  с учётом стратегии длины совпадения (SHORTEST-P).
+
+  Параметры:
+    REGEX — скомпилированный объект REGEX или строка с паттерном.
+    TEXT — строка для поиска.
+    START, END — границы полуинтервала [START, END), на котором осуществляется поиск.
+    SHORTEST-P — флаг выборки: NIL для подсчёта наидлиннейших совпадений (Longest),
+                               T для подсчёта наикратчайших (Shortest).
+    BUILTIN-CHAR-CLASS-MODE — режим встроенных классов (\\d, \\w, \\s и т.д.): :unicode или :ascii.
+      Задаётся ТОЛЬКО если REGEX является строкой (по умолчанию :unicode). Если REGEX передаётся
+      как скомпилированный объект, передача этого параметра вызовет ошибку.
+
+  По умолчанию подсчитываются все непересекающиеся самые левые самые длинные совпадения
+  на диапазоне всей строки (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
+  При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT)."
+  (let ((end (or end (length text)))
+        (regex (ensure-regex-object regex builtin-char-class-mode 'count-disjoint-matches)))
+    (assert-bounds (length text) start end 'count-disjoint-matches)
+    (let ((iter (make-match-span-iterator regex text
+                                          :start start
+                                          :end end
+                                          :shortest-p shortest-p)))
+      (loop for span = (funcall iter)
+            while span
+            count span)
+    )
+  )
+)
+
 ;; ========================================================
 ;; Вспомогательные функции
 ;; ========================================================

@@ -15,5 +15,6 @@
     #:do-match-spans 
     #:split
     #:replace-all
+    #:count-disjoint-matches
   )
 )

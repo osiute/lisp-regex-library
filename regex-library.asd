@@ -97,6 +97,7 @@
                                (:file "first-match-span-test")
                                (:file "all-match-spans-test")
                                (:file "split-test")
+                               (:file "count-disjoint-matches-test")
                                (:file "replace-all-test"))))))
   :perform (asdf:test-op (op c)
              (uiop:symbol-call :regex-library/tests :#run-tests)))
