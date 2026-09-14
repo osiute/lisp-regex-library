@@ -35,4 +35,5 @@
   (check-count-disjoint-matches-file #'assert-equal "\\bмир\\b" "texts/war-and-peace.txt" 32 :mode :unicode)
   (check-count-disjoint-matches-file #'assert-equal "\\b(война|Война)\\b" "texts/war-and-peace.txt" 50 :mode :unicode)
   (check-count-disjoint-matches-file #'assert-equal "том|Том" "texts/war-and-peace.txt" 1891 :mode :unicode)
+  (check-count-disjoint-matches-file #'assert-equal "\\b\\w+\\b" "texts/war-and-peace.txt" 292198 :mode :unicode)
 )
