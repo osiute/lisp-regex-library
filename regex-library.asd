@@ -92,7 +92,7 @@
                   ))
                   (:module "engine"
                   :components ((:file "contains-p-test")
-                               (:file "match-p-test")
+                               (:file "matches-p-test")
                                (:file "first-match-span-test")
                                (:file "all-match-spans-test")
                                (:file "split-test")

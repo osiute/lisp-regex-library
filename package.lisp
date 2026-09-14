@@ -7,7 +7,7 @@
               :re)
   (:export
     #:compile-regex         
-    #:match-p               
+    #:matches-p               
     #:contains-p            
     #:first-match-span 
     #:all-match-spans 

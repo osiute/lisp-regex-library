@@ -11,11 +11,13 @@
   При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))."
 
   (setf end (or end (length text)))
-  (assert-bounds (length text) start end "contains-p")
-  (not (null (lazy-unanchored-direct-pass regex text start (1- end)))) ; во внутренней реализации right-bound включается в диапазон                                  
+  (assert-bounds (length text) start end 'contains-p)
+  (let ((first-terminal-pos (lazy-unanchored-direct-pass regex text start end)))
+    (not (null first-terminal-pos))
+  )
 )
 
-(defun match-p (regex text &key (start 0) end)
+(defun matches-p (regex text &key (start 0) end)
   "Возвращает T, если весь участок строки TEXT в полуинтервале [START, END) полностью
   соответствует регулярному выражению REGEX, иначе — NIL.
 
@@ -26,9 +28,12 @@
   При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))."
   
   (setf end (or end (length text)))
-  (assert-bounds (length text) start end "match-p")
-  (let ((k (greedy-anchored-direct-pass regex text start (1- end))))
-    (and k (= k (1- end)))
+  (assert-bounds (length text) start end 'match-p)
+  (let ((last-terminal-pos (greedy-anchored-direct-pass regex text start end)))
+    (and 
+      last-terminal-pos
+      (= last-terminal-pos end)
+    )
   )
 )
 

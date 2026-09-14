@@ -137,6 +137,76 @@
 )
 
 ;; ============================================================================
+;; 7. Чистые позиции якорей в contains-p (возвращает T / NIL)
+;; ============================================================================
+
+(defun test-contains-p-anchors-pure (assert-equal-fn)
+  ;; Начало строки ^ и \A
+  (check-contains-p assert-equal-fn "^" "hello" t)
+  (check-contains-p assert-equal-fn "^" "" t)
+  (check-contains-p assert-equal-fn "\\A" "hello" t)
+  (check-contains-p assert-equal-fn "\\A" "" t)
+  
+  ;; Конец строки $ и \z
+  (check-contains-p assert-equal-fn "$" "hello" t)
+  (check-contains-p assert-equal-fn "$" "" t)
+  (check-contains-p assert-equal-fn "\\z" "hello" t)
+  (check-contains-p assert-equal-fn "\\z" "" t)
+
+  ;; Границы слов \b и не-границы \B
+  (check-contains-p assert-equal-fn "\\b" "a" t)
+  (check-contains-p assert-equal-fn "\\b" "a" t :start 1)
+  (check-contains-p assert-equal-fn "\\b" "  abc" t)
+  (check-contains-p assert-equal-fn "\\B" "abc" t)
+  (check-contains-p assert-equal-fn "\\B" "a" nil)
+)
+
+;; ============================================================================
+;; 8. Составные паттерны: текст + якори в contains-p
+;; ============================================================================
+
+(defun test-contains-p-anchors-composite (assert-equal-fn)
+  ;; Совпадение с началом (^ и \A)
+  (check-contains-p assert-equal-fn "^hello" "hello world" t)
+  (check-contains-p assert-equal-fn "^world" "hello world" nil)
+  (check-contains-p assert-equal-fn "\\Astart" "start process" t)
+  (check-contains-p assert-equal-fn "\\Aprocess" "start process" nil)
+
+  ;; Совпадение с концом ($ и \z)
+  (check-contains-p assert-equal-fn "world$" "hello world" t)
+  (check-contains-p assert-equal-fn "hello$" "hello world" nil)
+  (check-contains-p assert-equal-fn "stop\\z" "full stop" t)
+  (check-contains-p assert-equal-fn "full\\z" "full stop" nil)
+
+  ;; Строгое полное совпадение (^text$ и \Atext\z)
+  (check-contains-p assert-equal-fn "^exact$" "exact" t)
+  (check-contains-p assert-equal-fn "^exact$" "exact match" nil)
+  (check-contains-p assert-equal-fn "^exact$" "not exact" nil)
+  (check-contains-p assert-equal-fn "\\A12345\\z" "12345" t)
+  (check-contains-p assert-equal-fn "\\A12345\\z" "123456" nil)
+)
+
+;; ============================================================================
+;; 9. Выделение слов через \b / \B и поддиапазоны в contains-p
+;; ============================================================================
+
+(defun test-contains-p-anchors-words-and-ranges (assert-equal-fn)
+  ;; Выделение изолированных слов через \b
+  (check-contains-p assert-equal-fn "\\bcat\\b" "cat" t)
+  (check-contains-p assert-equal-fn "\\bcat\\b" "a cat here" t)
+  (check-contains-p assert-equal-fn "\\bcat\\b" "copycat" nil)
+  (check-contains-p assert-equal-fn "\\bcat\\b" "category" nil)
+  (check-contains-p assert-equal-fn "\\bкот\\b" "кот котик кот" t)
+  (check-contains-p assert-equal-fn "\\bкот\\b" "кот котик кот" t :start 3)
+
+  ;; Поиск внутри слов с помощью \B
+  (check-contains-p assert-equal-fn "\\Bcat\\B" "scatty" t)
+  (check-contains-p assert-equal-fn "\\Bкот\\B" "мяукотгав" t)
+  (check-contains-p assert-equal-fn "\\Bкот\\B" "кот" nil)
+
+)
+
+;; ============================================================================
 ;; Точка входа для запуска тестов модуля engine (contains-p)
 ;; ============================================================================
 
@@ -148,4 +218,7 @@
   (test-regex-contains-builtins-neg #'assert-equal)
   (test-regex-contains-complex #'assert-equal)
   (test-contains-p-with-anchors #'assert-equal)
+  (test-contains-p-anchors-pure #'assert-equal)
+  (test-contains-p-anchors-composite #'assert-equal)
+  (test-contains-p-anchors-words-and-ranges #'assert-equal)
 )
