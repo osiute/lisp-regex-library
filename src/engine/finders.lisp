@@ -17,19 +17,17 @@
   При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))"
 
   (setf end (or end (length text)))
-  (assert-bounds (length text) start end "first-match-span")
-  (let ((left-bound start) (right-bound (1- end)))
-    (multiple-value-bind (leftmost-k potential-rightest-end)
-        (compute-leftmost-k-and-potential-rightest-end regex text left-bound right-bound)
-      (when (not leftmost-k) 
-        (return-from first-match-span nil)
-      )
-      (let ((j
-              (if shortest-p
-                (lazy-anchored-direct-pass regex text leftmost-k potential-rightest-end)
-                (greedy-anchored-direct-pass regex text leftmost-k potential-rightest-end))))
-        (cons leftmost-k (1+ j)) ;; 1+, т.к. match-end не включается в диапазон
-      )
+  (assert-bounds (length text) start end 'first-match-span)
+  (multiple-value-bind (leftmost-start potential-rightest-end)
+      (compute-leftmost-start-and-potential-rightest-end regex text start end)
+    (when (not leftmost-start) 
+      (return-from first-match-span nil)
+    )
+    (let ((end-for-leftmost-occurence
+            (if shortest-p
+              (lazy-anchored-direct-pass regex text leftmost-start potential-rightest-end)
+              (greedy-anchored-direct-pass regex text leftmost-start potential-rightest-end))))
+      (cons leftmost-start end-for-leftmost-occurence)
     )
   ) 
 )
@@ -52,7 +50,7 @@
   При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))"
 
   (setf end (or end (length text)))
-  (assert-bounds (length text) start end "make-match-span-iterator")
+  (assert-bounds (length text) start end 'make-match-span-iterator)
   (let ((current-start start)
         (real-end end)
         (finished-p nil))
@@ -150,49 +148,51 @@
 ;; Вспомогательные функции
 ;; ========================================================
 
-(defun compute-leftmost-k-and-potential-rightest-end (regex text left-bound right-bound)
-  (multiple-value-bind (first-terminal-k pre)
-  (compute-first-terminal-k-and-potential-rightest-end regex text left-bound right-bound)
-    (when (not first-terminal-k)
-      (return-from compute-leftmost-k-and-potential-rightest-end 
+(defun compute-leftmost-start-and-potential-rightest-end (regex text left-bound-pos right-bound-pos)
+  ;; first-terminal-pos — самый первый встретившийся конец из всех возможных вхождений.
+  (multiple-value-bind (first-terminal-pos pre)
+                       (compute-first-terminal-pos-and-potential-rightest-end regex text left-bound-pos right-bound-pos)
+    (when (not first-terminal-pos)
+      (return-from compute-leftmost-start-and-potential-rightest-end 
         (values nil nil)
       )
     )
-
-    (let ((leftmost-k (compute-leftmost-k regex text left-bound first-terminal-k pre)))
-      (values leftmost-k pre)
+    
+    (let ((leftmost-start (compute-leftmost-start regex text left-bound-pos first-terminal-pos pre)))
+      (values leftmost-start pre)
     )
   )
 )
 
-(defun compute-first-terminal-k-and-potential-rightest-end (regex text left-bound right-bound)
-  (multiple-value-bind (first-terminal-k last-state-id)
-  (lazy-unanchored-direct-pass regex text left-bound right-bound)
-    (when (not first-terminal-k)
-      (return-from compute-first-terminal-k-and-potential-rightest-end 
+;; first-terminal-pos — самый первый встретившийся конец из всех возможных вхождений.
+(defun compute-first-terminal-pos-and-potential-rightest-end (regex text left-bound-pos right-bound-pos)
+  (multiple-value-bind (first-terminal-pos last-state-id)
+                       (lazy-unanchored-direct-pass regex text left-bound-pos right-bound-pos)
+    (when (not first-terminal-pos)
+      (return-from compute-first-terminal-pos-and-potential-rightest-end 
         (values nil nil)
       )
     )
 
     (let* ((dfa (regex-direct-dfa regex))
            (anchored-state-id (get-dfa-state-id-without-unanchored-start dfa last-state-id))
-           (pre (greedy-anchored-direct-pass regex text (1+ first-terminal-k) right-bound 
+           (pre (greedy-anchored-direct-pass regex text first-terminal-pos right-bound-pos 
                                         :anchored-state-id anchored-state-id)))
-      (values first-terminal-k pre)
+      (values first-terminal-pos pre)
     )
   )
 )
 
-(defun compute-leftmost-k (regex text left-bound first-terminal-k pre)
-  (when (= first-terminal-k (1- left-bound)) ; Пустая строка
-    (return-from compute-leftmost-k left-bound)
+(defun compute-leftmost-start (regex text left-bound-pos first-terminal-pos pre)
+  (when (= first-terminal-pos left-bound-pos) ; Пустая строка
+    (return-from compute-leftmost-start left-bound-pos)
   )
-  (let* ((last-state-id (nth-value 1 (greedy-unanchored-reverse-pass regex text first-terminal-k pre)))
+  (let* ((last-state-id (nth-value 1 (greedy-unanchored-reverse-pass regex text first-terminal-pos pre)))
          (dfa (regex-reversed-dfa regex))
          (anchored-state-id (get-dfa-state-id-without-unanchored-start dfa last-state-id))
-         (leftmost-k (greedy-anchored-reverse-pass regex text left-bound
-                      (1- first-terminal-k) :anchored-state-id anchored-state-id)))
-    leftmost-k
+         (leftmost-start (greedy-anchored-reverse-pass regex text left-bound-pos
+                      first-terminal-pos :anchored-state-id anchored-state-id)))
+    leftmost-start
   )
 )
 

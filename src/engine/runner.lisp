@@ -78,18 +78,40 @@
 (defun lazy-anchored-direct-pass (regex text left-bound-pos right-bound-pos
                                   &key anchored-state-id)
   (validate-pass-bounds 'lazy-anchored-direct-pass left-bound-pos right-bound-pos (length text))
-  
+  (let* ((anchored-state-id (or anchored-state-id 
+                                (compute-direct-start-state-id 
+                                      regex text left-bound-pos 
+                                      :unanchored-p nil))))
+    (direct-pass-logic regex text anchored-state-id 
+                      left-bound-pos right-bound-pos
+                      :return-on-first-terminal-p t)
+  )                     
 )
 
 (defun greedy-unanchored-reverse-pass (regex text left-bound-pos right-bound-pos
                                        &key unanchored-state-id)
   (validate-pass-bounds 'greedy-unanchored-reverse-pass left-bound-pos right-bound-pos (length text))
+  (let* ((unanchored-state-id (or unanchored-state-id 
+                                (compute-reverse-start-state-id 
+                                      regex text right-bound-pos 
+                                      :unanchored-p t))))
+    (reverse-pass-logic regex text unanchored-state-id 
+                      left-bound-pos right-bound-pos
+                      :return-on-first-terminal-p nil)
+  )
 )
 
 (defun greedy-anchored-reverse-pass (regex text left-bound-pos right-bound-pos
                                      &key anchored-state-id)
   (validate-pass-bounds 'greedy-anchored-reverse-pass left-bound-pos right-bound-pos (length text))
-  
+  (let* ((anchored-state-id (or anchored-state-id 
+                                (compute-reverse-start-state-id 
+                                      regex text right-bound-pos 
+                                      :unanchored-p nil))))
+    (reverse-pass-logic regex text anchored-state-id 
+                      left-bound-pos right-bound-pos
+                      :return-on-first-terminal-p nil)
+  )
 )
 
 ;; ==================================================================================
@@ -105,18 +127,18 @@
         (eq-table (regex-eq-classes-table regex))
         (curr-pos left-bound-pos)
         (curr-state start-state-id)
-        (last-accept nil))
+        (last-accept-pos nil))
     (loop
       ;; 1. Проверка на принимающее состояние
       (when (dfa-accept-state-p dfa curr-state)
-        (setf last-accept curr-pos)
-        (when return-on-first-terminal-p
-          (return (values curr-pos curr-state))
+        (if return-on-first-terminal-p
+          (return (values curr-pos curr-state)) ; Ленивый проход, возврат первой успешной позиции.
+          (setf last-accept-pos curr-pos) ; Жадный проход, поиск продолжается
         )
       )
       ;; 2. Проверка достижения правой границы
       (when (= curr-pos right-bound-pos)
-        (return (values last-accept curr-state))
+        (return (values last-accept-pos curr-state))
       )
       ;; 3. Вычисление шага и контекста для целевой позиции next-pos
       (let* ((next-pos (1+ curr-pos))
@@ -125,7 +147,7 @@
              (next-state (dfa-step-state dfa curr-state next-char-cls ctx)))
         ;; Тупик
         (when (or (null next-state) (< next-state 0))
-          (return (values last-accept next-state))
+          (return (values last-accept-pos next-state))
         )
         (setf curr-pos next-pos
               curr-state next-state)
@@ -143,18 +165,18 @@
         (eq-table (regex-eq-classes-table regex))
         (curr-pos right-bound-pos)
         (curr-state start-state-id)
-        (last-accept nil))
+        (last-accept-pos nil))
     (loop
       ;; 1. Проверка на принимающее состояние
       (when (dfa-accept-state-p dfa curr-state)
-        (setf last-accept curr-pos)
-        (when return-on-first-terminal-p
-          (return (values curr-pos curr-state))
+        (if return-on-first-terminal-p
+          (return (values curr-pos curr-state)) ; Ленивый проход, возврат первой успешной позиции.
+          (setf last-accept-pos curr-pos) ; Жадный проход, поиск продолжается
         )
       )
       ;; 2. Проверка достижения левой границы
       (when (= curr-pos left-bound-pos)
-        (return (values last-accept curr-state))
+        (return (values last-accept-pos curr-state))
       )
       ;; 3. Вычисление шага и контекста для целевой позиции next-pos (слева)
       (let* ((next-pos (1- curr-pos))
@@ -163,7 +185,7 @@
              (next-state (dfa-step-state dfa curr-state next-char-cls ctx)))
         ;; Тупик
         (when (or (null next-state) (< next-state 0))
-          (return (values last-accept next-state))
+          (return (values last-accept-pos next-state))
         )
         (setf curr-pos next-pos
               curr-state next-state)

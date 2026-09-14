@@ -181,6 +181,77 @@
   (check-first-match-span assert-equal-fn "\\bword\\b" "awordhere" nil)
 )
 
+(in-package :regex-library)
+
+;; ============================================================================
+;; 10. Чистые позиции якорей (нулевая длина совпадения)
+;; ============================================================================
+
+(defun test-first-match-span-anchors-pure (assert-equal-fn)
+  ;; Начало строки ^ и \A
+  (check-first-match-span assert-equal-fn "^" "hello" '(0 . 0))
+  (check-first-match-span assert-equal-fn "^" "" '(0 . 0))
+  (check-first-match-span assert-equal-fn "\\A" "hello" '(0 . 0))
+  (check-first-match-span assert-equal-fn "\\A" "" '(0 . 0))
+  
+  ;; Конец строки $ и \z
+  (check-first-match-span assert-equal-fn "$" "hello" '(5 . 5))
+  (check-first-match-span assert-equal-fn "$" "" '(0 . 0))
+  (check-first-match-span assert-equal-fn "\\z" "hello" '(5 . 5))
+  (check-first-match-span assert-equal-fn "\\z" "" '(0 . 0))
+
+  ;; Границы слов \b и не-границы \B
+  (check-first-match-span assert-equal-fn "\\b" "a" '(0 . 0))
+  (check-first-match-span assert-equal-fn "\\b" "a" '(1 . 1) :start 1)
+  (check-first-match-span assert-equal-fn "\\b" "  abc" '(2 . 2))
+  (check-first-match-span assert-equal-fn "\\B" "abc" '(1 . 1))
+  (check-first-match-span assert-equal-fn "\\B" "a" nil)
+)
+
+;; ============================================================================
+;; 11. Составные паттерны: текст + якори (^text, text$, ^text$)
+;; ============================================================================
+
+(defun test-first-match-span-anchors-composite (assert-equal-fn)
+  ;; Совпадение с началом (^ и \A)
+  (check-first-match-span assert-equal-fn "^hello" "hello world" '(0 . 5))
+  (check-first-match-span assert-equal-fn "^world" "hello world" nil)
+  (check-first-match-span assert-equal-fn "\\Astart" "start process" '(0 . 5))
+  (check-first-match-span assert-equal-fn "\\Aprocess" "start process" nil)
+
+  ;; Совпадение с концом ($ и \z)
+  (check-first-match-span assert-equal-fn "world$" "hello world" '(6 . 11))
+  (check-first-match-span assert-equal-fn "hello$" "hello world" nil)
+  (check-first-match-span assert-equal-fn "stop\\z" "full stop" '(5 . 9))
+  (check-first-match-span assert-equal-fn "full\\z" "full stop" nil)
+
+  ;; Строгое полное совпадение (^text$ и \Atext\z)
+  (check-first-match-span assert-equal-fn "^exact$" "exact" '(0 . 5))
+  (check-first-match-span assert-equal-fn "^exact$" "exact match" nil)
+  (check-first-match-span assert-equal-fn "^exact$" "not exact" nil)
+  (check-first-match-span assert-equal-fn "\\A12345\\z" "12345" '(0 . 5))
+  (check-first-match-span assert-equal-fn "\\A12345\\z" "123456" nil)
+)
+
+;; ============================================================================
+;; 12. Выделение слов через \b / \B и поддиапазоны (:START / :END)
+;; ============================================================================
+
+(defun test-first-match-span-anchors-words-and-ranges (assert-equal-fn)
+  ;; Выделение изолированных слов через \b
+  (check-first-match-span assert-equal-fn "\\bcat\\b" "cat" '(0 . 3))
+  (check-first-match-span assert-equal-fn "\\bcat\\b" "a cat here" '(2 . 5))
+  (check-first-match-span assert-equal-fn "\\bcat\\b" "copycat" nil)
+  (check-first-match-span assert-equal-fn "\\bcat\\b" "category" nil)
+  (check-first-match-span assert-equal-fn "\\bкот\\b" "кот котик кот" '(0 . 3))
+  (check-first-match-span assert-equal-fn "\\bкот\\b" "кот котик кот" '(10 . 13) :start 3)
+
+  ;; Поиск внутри слов с помощью \B
+  (check-first-match-span assert-equal-fn "\\Bcat\\B" "scatty" '(1 . 4))
+  (check-first-match-span assert-equal-fn "\\Bкот\\B" "мяукотгав" '(3 . 6))
+  (check-first-match-span assert-equal-fn "\\Bкот\\B" "кот" nil)
+)
+
 ;; ============================================================================
 ;; Точка входа для запуска тестов поиска первого вхождения
 ;; ============================================================================
@@ -196,4 +267,8 @@
   (test-first-match-span-subranges #'assert-equal)
   (test-first-match-span-complex #'assert-equal)
   (test-first-match-span-with-anchors #'assert-equal)
+  (test-first-match-span-anchors-pure #'assert-equal)
+  (test-first-match-span-anchors-composite #'assert-equal)
+  (test-first-match-span-anchors-words-and-ranges #'assert-equal)
+
 )

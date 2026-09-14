@@ -86,7 +86,7 @@
           (run-cache-tests)
           (run-dfa-tests)
           (run-contains-p-tests)
-          (run-match-p-tests)
+          (run-matches-p-tests)
           (run-first-match-span-tests)
           (run-all-match-spans-tests)
           (run-split-tests)
