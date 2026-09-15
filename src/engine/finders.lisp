@@ -61,32 +61,25 @@
   (START = 0, END = (LENGTH TEXT), SHORTEST-P = NIL).
   При явном указании NIL для END значение последнего воспринимается как END = (LENGTH TEXT))."
 
-  (let ((end (or end (length text)))
-        (regex (ensure-regex-object regex builtin-char-class-mode 'make-match-span-iterator)))
-    (assert-bounds (length text) start end 'make-match-span-iterator)
-    (let ((current-start start)
-          (real-end end)
-          (finished-p nil))
-      (lambda ()
-        (unless finished-p
-          (block nil
-            (when (> current-start real-end)
+  (let* ((real-end (or end (length text)))
+         (regex-obj (ensure-regex-object regex builtin-char-class-mode 'make-match-span-iterator))
+         (curr-start start)
+         (finished-p nil))
+    (assert-bounds (length text) start real-end 'make-match-span-iterator)
+    (lambda ()
+      (unless finished-p
+        (let ((span (step-iterator-search regex-obj text curr-start real-end shortest-p)))
+          (if span
+            (progn
+              ;; Сдвиг границы: +1 для пустых совпадений, (cdr span) для обычных
+              (setf curr-start (max (cdr span) (1+ (car span))))
+              span)
+        
+            (progn
               (setf finished-p t)
-              (return)
-            )
-
-            (let ((span (first-match-span regex text :start current-start
-                                                     :end real-end
-                                                     :shortest-p shortest-p)))
-              (unless span
-                (setf finished-p t)
-                (return)
-              )
-              ;; Намеренный сдвиг левой границы на следующий индекс для пустых строк
-              (setf current-start (max (cdr span) (1+ (car span))))
-              (return span)
-            )
-          ))
+              nil)
+          )
+        )
       )
     )
   )
@@ -115,21 +108,14 @@
 
   (let ((iter-sym (gensym "ITER-"))
         (span-sym (gensym "SPAN-")))
-    `(let* ((,iter-sym (make-match-span-iterator ,regex ,text
-                                              :start ,start
-                                              :end ,end
-                                              :shortest-p ,shortest-p
-                                              :builtin-char-class-mode ,builtin-char-class-mode)))
+    `(let ((,iter-sym (make-match-span-iterator ,regex ,text
+                                               :start ,start
+                                               :end ,end
+                                               :shortest-p ,shortest-p
+                                               :builtin-char-class-mode ,builtin-char-class-mode)))
       (loop for ,span-sym = (funcall ,iter-sym)
         while ,span-sym
-        do ,(if (listp var)
-          ;; Деструктуриразция полуинтервала в переданные символы
-          ;; через '(START END).
-          `(let ((,(first var) (car ,span-sym))
-                 (,(second var) (cdr ,span-sym)))
-            ,@body)
-          `(let ((,var ,span-sym)) ,@body)
-        )
+          do ,(expand-do-match-body-with-destructuring-bind var span-sym body)
       )
     )
   )
@@ -206,7 +192,36 @@
 )
 
 ;; ========================================================
-;; Вспомогательные функции
+;; Вспомогательные функции для make-match-span-iterator
+;; ========================================================
+
+(defun step-iterator-search (regex-obj text curr-start real-end shortest-p)
+  "Ищет очередное совпадение в границах [CURR-START, REAL-END]."
+  (when (<= curr-start real-end)
+    (first-match-span regex-obj text :start curr-start
+                                     :end real-end
+                                     :shortest-p shortest-p)
+  )
+)
+
+;; ========================================================
+;; Вспомогательные функции для do-match-spans
+;; ========================================================
+
+(defun expand-do-match-body-with-destructuring-bind (var span-sym body)
+  "Формирует let-связывание для деструктуризации (START END) или пары VAR."
+  (if (listp var)
+    `(let ((,(first var) (car ,span-sym))
+            (,(second var) (cdr ,span-sym)))
+        ,@body)
+
+    `(let ((,var ,span-sym))
+        ,@body)
+  )
+)
+
+;; ========================================================
+;; Вспомогательные функции для first-match-span
 ;; ========================================================
 
 (defun compute-leftmost-start-and-potential-rightest-end (regex text left-bound-pos right-bound-pos)
