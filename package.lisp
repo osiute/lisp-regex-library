@@ -1,6 +1,5 @@
 (in-package :cl-user)
 
-;; В package.lisp
 (defpackage :regex-library
   (:use :cl)
   (:nicknames :regex
