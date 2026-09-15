@@ -108,7 +108,7 @@
 ; =====================================================================
 ; Вызов групп тестовых функций
 ; =====================================================================
-(declaim inline (run-all-tests))
+(declaim (inline run-all-tests))
 (defun run-all-tests ()
   (format t "~%=== Запуск всех тестов regex-library ===~%~%")
   (let ((all-succeed-p 
@@ -152,6 +152,9 @@
   )
 )
 
+(defun run-tests ()
+  "Точка входа для ASDF test-op."
+  (run-all-tests))
 (defun run-tests ()
   "Точка входа для ASDF test-op."
   (run-all-tests))
