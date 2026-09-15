@@ -45,6 +45,8 @@
   (format t "~4T(run-split-tests)~%")
   (format t "~4T(run-replace-all-tests)~%")
   (format t "~4T(run-count-disjoint-matches-tests)~%")
+  (format t "~4T(run-ppcre-war-and-peace-suite)~%")
+  (format t "~4T(run-ppcre-pathological-suite)~%")
   
   (format t "--------------------------------------------------~%")
   (format t "Доступные команды:~%")

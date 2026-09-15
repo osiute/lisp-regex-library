@@ -3,6 +3,7 @@
   :author "Tikhon"
   :license "MIT"
   :description "Regular expression library in Common Lisp (SBCL) with guaranteed O(N) linear search complexity using Lazy DFA and Unicode equivalence classes."
+  :depends-on ("cl-ppcre")
   :components ((:file "package")
                (:module "src"
                 :depends-on ("package")
@@ -98,6 +99,7 @@
                                (:file "all-match-spans-test")
                                (:file "split-test")
                                (:file "count-disjoint-matches-test")
+                               (:file "ppcre-comparison-tests")
                                (:file "replace-all-test"))))))
   :perform (asdf:test-op (op c)
              (uiop:symbol-call :regex-library/tests :#run-tests)))

@@ -138,6 +138,8 @@
           (run-split-tests)
           (run-replace-all-tests)
           (run-count-disjoint-matches-tests)
+          (run-ppcre-war-and-peace-suite)
+          (run-ppcre-pathological-suite)
         )))
     (if all-succeed-p
       (progn 

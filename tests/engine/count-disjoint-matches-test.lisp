@@ -30,7 +30,7 @@
 )
 
 ;; Набор тестов для проверки подсчёта непересекающихся совпадений на больших текстах
-(deftest run-count-disjoint-matches-tests "engine/"
+(deftest run-count-disjoint-matches-tests "engine/count-disjoint-matches"
   (check-count-disjoint-matches-file #'assert-equal "мир|Мир" "texts/war-and-peace.txt" 293 :mode :unicode)
   (check-count-disjoint-matches-file #'assert-equal "\\bмир\\b" "texts/war-and-peace.txt" 32 :mode :unicode)
   (check-count-disjoint-matches-file #'assert-equal "\\b(война|Война)\\b" "texts/war-and-peace.txt" 50 :mode :unicode)
