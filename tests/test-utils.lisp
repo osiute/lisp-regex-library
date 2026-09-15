@@ -155,6 +155,3 @@
 (defun run-tests ()
   "Точка входа для ASDF test-op."
   (run-all-tests))
-(defun run-tests ()
-  "Точка входа для ASDF test-op."
-  (run-all-tests))
