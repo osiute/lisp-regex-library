@@ -1,6 +1,7 @@
 ;; Реализует парсинг символьных классов ([a-z], [^0-9], \d, \w, \s) и экранированных символов (\\, \|, \uXXXX и т.д.)
 (in-package :regex-library)
 
+(declaim (inline get-escaped-anchor-type))
 (defun get-escaped-anchor-type (ch)
   (case ch
     (#\b :word-boundary)
@@ -12,6 +13,7 @@
   )
 )
 
+(declaim (inline get-standard-escape-or-unicode-character))
 (defun get-standard-escape-or-unicode-character (ch state)
   (case ch
     (#\n (code-char 10))
