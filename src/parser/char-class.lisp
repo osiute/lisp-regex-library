@@ -93,21 +93,22 @@
            (eql (parser-peek state) #\])))
 )
 
-;; Считывает один элемент внутри [...] — литеральный дефис, диапазон или одиночный символ
+;; Считывает один элемент внутри [...]: литеральный дефис, диапазон или одиночный символ
 (defun parse-bracket-element (state ranges)
   (let ((cur (parser-peek state)))
     (if (hyphen-literal-p cur ranges state)
-        (progn
-          (parser-next state)
-          (cons #\- #\-))
-        (let ((start-char (parse-bracket-char state)))
-          ;; Проверяем, идет ли следом '-' и не закрывается ли сразу класс ']'
-          (if (and (eql (parser-peek state) #\-)
-                   (not (eql (char-at-offset state 1) #\])))
-              (parse-bracket-range-end state start-char)
-              (cons start-char start-char)
-          )
+      (progn
+        (parser-next state)
+        (cons #\- #\-))
+      ;; Не литеральный дефис
+      (let ((start-char (parse-bracket-char state)))
+        ;; Проверяем, идет ли следом '-' и не закрывается ли сразу класс ']'
+        (if (and (eql (parser-peek state) #\-)
+                  (not (eql (char-at-offset state 1) #\])))
+            (parse-bracket-range-end state start-char)
+            (cons start-char start-char)
         )
+      )
     )
   )
 )
@@ -140,6 +141,6 @@
         (push (parse-bracket-element state ranges) ranges)
       )
     )
-    (make-ast-char-class :ranges (nreverse ranges) :negated-p negated)
+    (make-ast-char-class :ranges ranges :negated-p negated)
   )
 )
