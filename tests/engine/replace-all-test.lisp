@@ -197,7 +197,7 @@
 ;; 2. Тестирование отрицания скобочных групп с внутренними спецклассами [^...]
 (defun test-replace-bracket-negated-builtin-classes (assert-equal-fn)
   ;; Все, что НЕ цифра и НЕ буква a-f [^\d a-f]
-  (check-replace-all assert-equal-fn "[^\\da-f]+" "a1!b2@g3#" "X" "a1Xb2Xg3X")
+  (check-replace-all assert-equal-fn "[^\\da-f]" "a1!b2@g3#" "X" "a1Xb2XX3X")
   
   ;; Отрицание спецкласса \s (то есть удаление всех не-пробелов)
   (check-replace-all assert-equal-fn "[^\\s]+" "hello  world " "*" "*  * ")

@@ -168,7 +168,7 @@
         (let ((element (parse-bracket-element state ranges builtin-char-class-mode)))
           ;; Различаем список диапазонов от единичного cons-пара (start . end)
           (if (and (listp element) (consp (car element)))
-              (setf ranges (nconc element ranges))
+              (setf ranges (append element ranges))
               (push element ranges)
           )
         )
