@@ -58,6 +58,21 @@
   )
 )
 
+(declaim (inline unicode-word-char-p
+                 unicode-digit-char-p
+                 unicode-space-char-p
+                 get-ascii-w-complement-ranges
+                 get-ascii-d-complement-ranges
+                 get-ascii-s-complement-ranges
+                 get-builtin-char-class-ranges-positive
+                 get-builtin-char-class-ranges-complement
+                 get-builtin-char-class-ranges
+                 ascii-word-char-p
+                 char-newline-p
+                 word-char-p
+                 builtin-digit-char-p
+                 builtin-space-char-p))
+
 ;; --------------------------------------------------------------------------
 ;; Генератор и кэширование диапазонов
 ;; --------------------------------------------------------------------------
@@ -172,7 +187,8 @@
 ;; --------------------------------------------------------------------------
 
 (declaim (inline get-builtin-char-class-ranges-positive
-                 get-builtin-char-class-ranges-complement))
+                 get-builtin-char-class-ranges-complement
+                 get-builtin-char-class-ranges))
 
 (defun get-builtin-char-class-ranges-positive (ch char-mode)
   (case ch
