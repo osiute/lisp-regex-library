@@ -13,8 +13,8 @@
   )
 )
 
-(declaim (inline get-standard-escape-or-unicode-character))
-(defun get-standard-escape-or-unicode-character (ch state)
+(declaim (inline get-escape-literal))
+(defun get-escape-literal (ch state)
   (case ch
     (#\n (code-char 10))
     (#\r (code-char 13))
@@ -25,39 +25,28 @@
   )
 )
 
-(declaim (inline builtin-capital-p))
-(defun builtin-capital-p (ch)
-  (or (eql ch #\D) (eql ch #\W) (eql ch #\S))
-)
-
 ;; Парсит экранированный спецкласс (\d, \w, \s), обычный экранированный символ (\., \\, \| и т.д.),
 ;; управляющий символ (\n, \r, \t), юникод-символ (uXXXX, u{X+}) или якоря \b, \B, \A, \z, \Z.
 ;; builtin-char-class-mode — либо :unicode, либо :ascii.
 (defun parse-escape-char-class (state builtin-char-class-mode)
   (parser-next state) ; пропускаем '\'
-  (let ((escaped (parser-next state)))
+  (let ((escaped (parser-next state))
+        (val nil))
     (unless escaped
       (error "Синтаксическая ошибка: незавершённая escape-последовательность в позиции ~A"
-             (parser-state-index state))
+         (parser-state-index state))
     )
-    (let ((builtin-ranges (get-builtin-char-class-ranges escaped builtin-char-class-mode))
-          (escaped-anchor-type (get-escaped-anchor-type escaped)))
-      (cond
-        ((and builtin-ranges (builtin-capital-p escaped)) ; \D, \W, \S
-          (make-ast-char-class :ranges builtin-ranges :negated-p t))
-        (builtin-ranges ; \d, \w, \s
-          (make-ast-char-class :ranges builtin-ranges :negated-p nil))
-        ((builtin-capital-p escaped) (error "parser/char-class/parse-escape-char-class:
-            Нет диапазонов для встроенной заглавной буквы. Я сделал плохую программу!"))
-        (escaped-anchor-type (make-ast-anchor :type escaped-anchor-type))
-        (t (progn
-          (let ((standard (get-standard-escape-or-unicode-character escaped state)))
-            (assert standard () "Синтаксическая ошибка: неизвестная escape-последовательность в позиции ~A"
-                                 (1- (parser-state-index state)))
-            (make-ast-literal :char standard)
-          )
-        ))
-      )
+    (cond
+      ((setf val (get-escaped-anchor-type escaped))
+       (make-ast-anchor :type val))
+      ((setf val (get-escape-literal escaped state))
+       (make-ast-literal :char val))
+      ((setf val (or (get-builtin-char-class-ranges-positive escaped builtin-char-class-mode)
+                     (get-builtin-char-class-ranges-complement escaped builtin-char-class-mode)))
+       (make-ast-char-class :ranges val :negated-p nil))
+      (t
+       (error "Синтаксическая ошибка: неизвестная escape-последовательность в позиции ~A"
+              (1- (parser-state-index state))))
     )
   )
 )
@@ -66,7 +55,7 @@
 (defun parse-bracket-char (state)
   (let ((ch (parser-next state)))
     (if (and (eql ch #\\) (parser-peek state))
-        (parser-next state) ; пропускаем '\' и берем экранированный символ
+        (parser-next state)
         ch
     )
   )
