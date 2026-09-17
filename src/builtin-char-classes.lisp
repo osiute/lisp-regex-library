@@ -29,6 +29,9 @@
 (defvar *unicode-w-ranges* nil)
 (defvar *unicode-d-ranges* nil)
 (defvar *unicode-s-ranges* nil)
+(defvar *unicode-w-complement-ranges* nil)
+(defvar *unicode-d-complement-ranges* nil)
+(defvar *unicode-s-complement-ranges* nil)
 
 ;; --------------------------------------------------------------------------
 ;; Вспомогательные предикаты Юникода
@@ -65,7 +68,6 @@
     (dotimes (code char-code-limit)
       (let* ((ch (code-char code))
              (match (and ch (funcall predicate-fn ch))))
-        ;; Обработка начала, продолжения или завершения текущего диапазона
         (cond
           ((and match (null start))
             (setf start ch prev ch))
@@ -77,12 +79,42 @@
         )
       )
     )
-    ;; Последний диапазон, если символ был в конце таблицы
     (when start
       (push (cons start prev) ranges))
     (nreverse ranges)
   )
 )
+
+(defun complement-char-ranges (ranges &optional (limit char-code-limit))
+  (let ((result nil)
+        (current 0)
+        (limit-1 (1- limit)))
+    (dolist (range ranges)
+      (let* ((start (min (char-code (car range)) limit-1))
+             (end (min (char-code (cdr range)) limit-1)))
+        (when (> start current)
+          (push (cons (code-char current)
+                      (code-char (1- start)))
+                result))
+        (setf current (max current (1+ end)))
+      )
+    )
+    (when (< current limit)
+      (push (cons (code-char current)
+                  (code-char (1- limit)))
+            result))
+    (nreverse result)
+  )
+)
+
+(defun get-ascii-w-complement-ranges ()
+  (complement-char-ranges +ascii-w-ranges+ 128))
+
+(defun get-ascii-d-complement-ranges ()
+  (complement-char-ranges +ascii-d-ranges+ 128))
+
+(defun get-ascii-s-complement-ranges ()
+  (complement-char-ranges +ascii-s-ranges+ 128))
 
 ;; Возвращает кэшированный список Unicode-диапазонов для \w
 (defun get-unicode-w-ranges ()
@@ -111,43 +143,107 @@
   )
 )
 
+(defun get-unicode-w-complement-ranges ()
+  (or
+    *unicode-w-complement-ranges*
+    (setf *unicode-w-complement-ranges*
+          (complement-char-ranges (get-unicode-w-ranges)))
+  )
+)
+
+(defun get-unicode-d-complement-ranges ()
+  (or
+    *unicode-d-complement-ranges*
+    (setf *unicode-d-complement-ranges*
+          (complement-char-ranges (get-unicode-d-ranges)))
+  )
+)
+
+(defun get-unicode-s-complement-ranges ()
+  (or
+    *unicode-s-complement-ranges*
+    (setf *unicode-s-complement-ranges*
+          (complement-char-ranges (get-unicode-s-ranges)))
+  )
+)
+
 ;; --------------------------------------------------------------------------
 ;; Главная функция получения диапазонов для парсера
 ;; --------------------------------------------------------------------------
 
-;; Возвращает диапазоны пар (start . end) для спецкласса с учетом char-mode
-(defun get-builtin-char-class-ranges (ch char-mode)
+(declaim (inline get-builtin-char-class-ranges-positive
+                 get-builtin-char-class-ranges-complement))
+
+(defun get-builtin-char-class-ranges-positive (ch char-mode)
   (case ch
-    ((#\w #\W)
+    (#\w
       (case char-mode
         (:unicode (get-unicode-w-ranges))
         (:ascii +ascii-w-ranges+)
         (t
-          (error "get-builtin-char-class-ranges: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+          (error "get-builtin-char-class-ranges-positive: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
         )
       )
     )
-    ((#\d #\D)
+    (#\d
       (case char-mode
         (:unicode (get-unicode-d-ranges))
         (:ascii +ascii-d-ranges+)
         (t
-          (error "get-builtin-char-class-ranges: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+          (error "get-builtin-char-class-ranges-positive: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
         )
       )
     )
-    ((#\s #\S)
+    (#\s
       (case char-mode
         (:unicode (get-unicode-s-ranges))
         (:ascii +ascii-s-ranges+)
         (t
-          (error "get-builtin-char-class-ranges: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+          (error "get-builtin-char-class-ranges-positive: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
         )
       )
     )
-    (t
-      nil
+    (t nil)
+  )
+)
+
+(defun get-builtin-char-class-ranges-complement (ch char-mode)
+  (case ch
+    (#\W
+      (case char-mode
+        (:unicode (get-unicode-w-complement-ranges))
+        (:ascii (get-ascii-w-complement-ranges))
+        (t
+          (error "get-builtin-char-class-ranges-complement: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+        )
+      )
     )
+    (#\D
+      (case char-mode
+        (:unicode (get-unicode-d-complement-ranges))
+        (:ascii (get-ascii-d-complement-ranges))
+        (t
+          (error "get-builtin-char-class-ranges-complement: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+        )
+      )
+    )
+    (#\S
+      (case char-mode
+        (:unicode (get-unicode-s-complement-ranges))
+        (:ascii (get-ascii-s-complement-ranges))
+        (t
+          (error "get-builtin-char-class-ranges-complement: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+        )
+      )
+    )
+    (t nil)
+  )
+)
+
+(defun get-builtin-char-class-ranges (ch char-mode)
+  (or
+    (get-builtin-char-class-ranges-positive ch char-mode)
+    (get-builtin-char-class-ranges-complement ch char-mode)
   )
 )
 

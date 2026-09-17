@@ -7,7 +7,8 @@
   (test-literal-hyphens-in-bracket-class #'assert-equal)
   (test-char-class-errors #'assert-error))
 
-;; Встроенные классы возвращают диапазоны, а \W дополнительно устанавливает отрицание.
+;; Встроенные классы возвращают реальные диапазоны; дополнительный класс хранится
+;; как обычный char-class с диапазоном дополнения, а не как флаг negated-p.
 (defun test-escape-char-classes (assert-equal-fn)
   (let ((node (parse-escape-char-class (make-parser-state :str "\\d" :len 2) :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
@@ -22,10 +23,10 @@
              nil "\\w не отрицательный"))
   (let ((node (parse-escape-char-class (make-parser-state :str "\\W" :len 2) :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
-             '((#\a . #\z) (#\A . #\Z) (#\0 . #\9) (#\_ . #\_))
-             "\\W дает диапазоны (a-z, A-Z, 0-9, _)")
+             (get-builtin-char-class-ranges-complement #\W :ascii)
+             "\\W дает реальные диапазоны дополнения к \\w")
     (funcall assert-equal-fn (ast-char-class-negated-p node)
-             t "\\W отрицательный")))
+             nil "\\W не отрицательный")))
 
 ;; Диапазоны внутри класса сохраняются в исходном порядке.
 (defun test-bracket-char-class-ranges (assert-equal-fn)
