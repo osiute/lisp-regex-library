@@ -178,6 +178,52 @@
   )
 )
 
+;; 1. Тестирование встроенных спецклассов внутри [...]
+(defun test-replace-bracket-builtin-classes (assert-equal-fn)
+  ;; Цифры и буквы вместе [\d\a-c]
+  (check-replace-all assert-equal-fn "[\\da-c]" "1x2a3b" "_" "_x____")
+  
+  ;; Спецклассы и пробелы [\s\d]
+  (check-replace-all assert-equal-fn "[\\s\\d]+" "a 12 b 34 c" "-" "a-b-c")
+  
+  ;; Отрицательные встроенные классы внутри скобок [\D] и [\S]
+  (check-replace-all assert-equal-fn "[\\D]+" "abc123def456" "-" "-123-456")
+  (check-replace-all assert-equal-fn "[\\S]+" "hello world test" "X" "X X X")
+  
+  ;; Комбинация нескольких спецклассов [\w\s]
+  (check-replace-all assert-equal-fn "[\\w\\s]" "a!b@c#" "_" "_!_@_#")
+)
+
+;; 2. Тестирование отрицания скобочных групп с внутренними спецклассами [^...]
+(defun test-replace-bracket-negated-builtin-classes (assert-equal-fn)
+  ;; Все, что НЕ цифра и НЕ буква a-f [^\d a-f]
+  (check-replace-all assert-equal-fn "[^\\da-f]" "a1!b2@g3#" "X" "a1Xb2XX3X")
+  
+  ;; Отрицание спецкласса \s (то есть удаление всех не-пробелов)
+  (check-replace-all assert-equal-fn "[^\\s]+" "hello  world " "*" "*  * ")
+)
+
+;; 3. Тестирование сложного экранирования, дефисов и спецсимволов внутри [...]
+(defun test-replace-bracket-edge-cases (assert-equal-fn)
+  ;; Экранированный дефис и дефис в начале/конце класса
+  (check-replace-all assert-equal-fn "[-a-z]" "a-b_c" "X" "XXX_X")
+  (check-replace-all assert-equal-fn "[a\\-z]" "a-z" "X" "XXX")
+  
+  ;; Экранированные закрывающие скобки и слэши внутри [...]
+  (check-replace-all assert-equal-fn "[\\]\\[]" "a[b]c" "_" "a_b_c")
+  (check-replace-all assert-equal-fn "[\\\\\\d]+" "a\\123b" "X" "aXb")
+  
+  ;; Юникод-экранирование внутри [...]
+  (check-replace-all assert-equal-fn "[\\u0030-\\u0039]+" "hello 123 world" "N" "hello N world")
+)
+
+;; 4. Единый запуск всех тестов символьных классов
+(defun run-replace-bracket-char-class-tests (assert-equal-fn)
+  (test-replace-bracket-builtin-classes assert-equal-fn)
+  (test-replace-bracket-negated-builtin-classes assert-equal-fn)
+  (test-replace-bracket-edge-cases assert-equal-fn)
+)
+
 ;; ============================================================================
 ;; Точка входа для запуска всех тестов функции replace-all
 ;; ============================================================================
@@ -193,4 +239,5 @@
   (test-replace-all-complex-html #'assert-equal)
   (test-replace-all-complex-redaction #'assert-equal)
   (test-replace-all-complex-normalization #'assert-equal)
+  (run-replace-bracket-char-class-tests #'assert-equal)
 )

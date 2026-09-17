@@ -29,6 +29,9 @@
 (defvar *unicode-w-ranges* nil)
 (defvar *unicode-d-ranges* nil)
 (defvar *unicode-s-ranges* nil)
+(defvar *unicode-w-complement-ranges* nil)
+(defvar *unicode-d-complement-ranges* nil)
+(defvar *unicode-s-complement-ranges* nil)
 
 ;; --------------------------------------------------------------------------
 ;; Вспомогательные предикаты Юникода
@@ -55,17 +58,35 @@
   )
 )
 
+(declaim (inline unicode-word-char-p
+                 unicode-digit-char-p
+                 unicode-space-char-p
+                 ascii-word-char-p
+                 ascii-not-word-char-p
+                 ascii-not-digit-char-p
+                 ascii-not-space-char-p
+                 unicode-not-word-char-p
+                 unicode-not-digit-char-p
+                 unicode-not-space-char-p
+                 char-newline-p
+                 get-ascii-w-complement-ranges
+                 get-ascii-d-complement-ranges
+                 get-ascii-s-complement-ranges
+                 get-builtin-char-class-ranges-positive
+                 get-builtin-char-class-ranges-complement
+                 get-builtin-char-class-ranges))
+
 ;; --------------------------------------------------------------------------
 ;; Генератор и кэширование диапазонов
 ;; --------------------------------------------------------------------------
 
-;; Генератор диапазонов (start . end) для заданного предиката
-(defun generate-char-ranges (predicate-fn)
+;; Генератор диапазонов (start . end) для заданного предиката.
+;; При необходимости можно ограничить верхнюю границу диапазона через LIMIT.
+(defun generate-char-ranges (predicate-fn &optional (limit char-code-limit))
   (let ((ranges nil) (start nil) (prev nil))
-    (dotimes (code char-code-limit)
+    (dotimes (code limit)
       (let* ((ch (code-char code))
              (match (and ch (funcall predicate-fn ch))))
-        ;; Обработка начала, продолжения или завершения текущего диапазона
         (cond
           ((and match (null start))
             (setf start ch prev ch))
@@ -77,12 +98,20 @@
         )
       )
     )
-    ;; Последний диапазон, если символ был в конце таблицы
     (when start
       (push (cons start prev) ranges))
     (nreverse ranges)
   )
 )
+
+(defun get-ascii-w-complement-ranges ()
+  (generate-char-ranges #'ascii-not-word-char-p 128))
+
+(defun get-ascii-d-complement-ranges ()
+  (generate-char-ranges #'ascii-not-digit-char-p 128))
+
+(defun get-ascii-s-complement-ranges ()
+  (generate-char-ranges #'ascii-not-space-char-p 128))
 
 ;; Возвращает кэшированный список Unicode-диапазонов для \w
 (defun get-unicode-w-ranges ()
@@ -111,43 +140,104 @@
   )
 )
 
+(defun get-unicode-w-complement-ranges ()
+  (or
+    *unicode-w-complement-ranges*
+    (setf *unicode-w-complement-ranges*
+          (generate-char-ranges #'unicode-not-word-char-p))
+  )
+)
+
+(defun get-unicode-d-complement-ranges ()
+  (or
+    *unicode-d-complement-ranges*
+    (setf *unicode-d-complement-ranges*
+          (generate-char-ranges #'unicode-not-digit-char-p))
+  )
+)
+
+(defun get-unicode-s-complement-ranges ()
+  (or
+    *unicode-s-complement-ranges*
+    (setf *unicode-s-complement-ranges*
+          (generate-char-ranges #'unicode-not-space-char-p))
+  )
+)
+
 ;; --------------------------------------------------------------------------
 ;; Главная функция получения диапазонов для парсера
 ;; --------------------------------------------------------------------------
 
-;; Возвращает диапазоны пар (start . end) для спецкласса с учетом char-mode
-(defun get-builtin-char-class-ranges (ch char-mode)
+(defun get-builtin-char-class-ranges-positive (ch char-mode)
   (case ch
-    ((#\w #\W)
+    (#\w
       (case char-mode
         (:unicode (get-unicode-w-ranges))
         (:ascii +ascii-w-ranges+)
         (t
-          (error "get-builtin-char-class-ranges: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+          (error "get-builtin-char-class-ranges-positive: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
         )
       )
     )
-    ((#\d #\D)
+    (#\d
       (case char-mode
         (:unicode (get-unicode-d-ranges))
         (:ascii +ascii-d-ranges+)
         (t
-          (error "get-builtin-char-class-ranges: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+          (error "get-builtin-char-class-ranges-positive: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
         )
       )
     )
-    ((#\s #\S)
+    (#\s
       (case char-mode
         (:unicode (get-unicode-s-ranges))
         (:ascii +ascii-s-ranges+)
         (t
-          (error "get-builtin-char-class-ranges: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+          (error "get-builtin-char-class-ranges-positive: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
         )
       )
     )
-    (t
-      nil
+    (t nil)
+  )
+)
+
+(defun get-builtin-char-class-ranges-complement (ch char-mode)
+  (case ch
+    (#\W
+      (case char-mode
+        (:unicode (get-unicode-w-complement-ranges))
+        (:ascii (get-ascii-w-complement-ranges))
+        (t
+          (error "get-builtin-char-class-ranges-complement: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+        )
+      )
     )
+    (#\D
+      (case char-mode
+        (:unicode (get-unicode-d-complement-ranges))
+        (:ascii (get-ascii-d-complement-ranges))
+        (t
+          (error "get-builtin-char-class-ranges-complement: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+        )
+      )
+    )
+    (#\S
+      (case char-mode
+        (:unicode (get-unicode-s-complement-ranges))
+        (:ascii (get-ascii-s-complement-ranges))
+        (t
+          (error "get-builtin-char-class-ranges-complement: неизвестный char-mode ~S. Я СДЕЛАЛ ПЛОХУЮ ПРОГРАММУ!!!" char-mode)
+        )
+      )
+    )
+    (t nil)
+  )
+)
+
+(defun get-builtin-char-class-ranges (ch char-mode)
+  (or
+    (get-builtin-char-class-ranges-positive ch char-mode)
+    (get-builtin-char-class-ranges-complement ch char-mode)
   )
 )
 
@@ -164,6 +254,24 @@
     (char= ch #\_)
   )
 )
+
+(defun ascii-not-word-char-p (ch)
+  (not (ascii-word-char-p ch)))
+
+(defun ascii-not-digit-char-p (ch)
+  (not (char<= #\0 ch #\9)))
+
+(defun ascii-not-space-char-p (ch)
+  (not (member ch '(#\Space #\Tab #\Page #\Newline #\Return))))
+
+(defun unicode-not-word-char-p (ch)
+  (not (unicode-word-char-p ch)))
+
+(defun unicode-not-digit-char-p (ch)
+  (not (unicode-digit-char-p ch)))
+
+(defun unicode-not-space-char-p (ch)
+  (not (unicode-space-char-p ch)))
 
 (defun char-newline-p (ch)
   (or (char= ch #\Newline)
