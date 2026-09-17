@@ -19,7 +19,7 @@
     (#\n (code-char 10))
     (#\r (code-char 13))
     (#\t (code-char 9))
-    ((#\\ #\. #\* #\+ #\? #\^ #\$ #\( #\) #\[ #\] #\{ #\} #\|) ch)
+    ((#\\ #\. #\* #\+ #\? #\^ #\$ #\( #\) #\[ #\] #\{ #\} #\| #\-) ch)
     (#\u (parse-unicode-character state))
     (t nil)
   )
@@ -41,8 +41,7 @@
        (make-ast-anchor :type val))
       ((setf val (get-escape-literal escaped state))
        (make-ast-literal :char val))
-      ((setf val (or (get-builtin-char-class-ranges-positive escaped builtin-char-class-mode)
-                     (get-builtin-char-class-ranges-complement escaped builtin-char-class-mode)))
+      ((setf val (get-builtin-char-class-ranges escaped builtin-char-class-mode))
        (make-ast-char-class :ranges val :negated-p nil))
       (t
        (error "Синтаксическая ошибка: неизвестная escape-последовательность в позиции ~A"
@@ -51,29 +50,59 @@
   )
 )
 
-;; Считывает следующий символ внутри [...] с учётом экранирования (\- -> -)
-(defun parse-bracket-char (state)
+;; Разбирает escape-последовательность внутри [...] и возвращает сырой токен:
+;; либо character, либо список консов. Для якорей выкидывает ошибку.
+(defun parse-escape-char-in-brackets (state builtin-char-class-mode)
+  (let ((escaped (parser-next state))
+        (val nil))
+    (unless escaped
+      (error "Синтаксическая ошибка: незавершённая escape-последовательность в позиции ~A"
+             (parser-state-index state)
+      )
+    )
+    (cond
+      ((setf val (get-escape-literal escaped state))
+       val)
+      ((setf val (or (get-builtin-char-class-ranges-positive escaped builtin-char-class-mode)
+                     (get-builtin-char-class-ranges-complement escaped builtin-char-class-mode)))
+       val)
+      ((get-escaped-anchor-type escaped)
+       (error "Синтаксическая ошибка: якорь '\\~A' недопустим внутри '[...]' в позиции ~A"
+              escaped (parser-state-index state)
+       ))
+      (t
+       (error "Синтаксическая ошибка: неизвестная escape-последовательность в позиции ~A"
+              (1- (parser-state-index state))
+       ))
+    )
+  )
+)
+
+;; Считывает один сырой токен внутри [...]: либо char, либо список cons-пар элементов
+(defun parse-bracket-token (state builtin-char-class-mode)
   (let ((ch (parser-next state)))
     (if (and (eql ch #\\) (parser-peek state))
-        (parser-next state)
+        (parse-escape-char-in-brackets state builtin-char-class-mode)
         ch
     )
   )
 )
 
 ;; Завершает разбор диапазона 'start-char - end-char' и валидирует границы
-(defun parse-bracket-range-end (state start-char)
+(defun parse-bracket-range-end (state start-char builtin-char-class-mode)
   (parser-next state) ; пропускаем '-'
-  (let ((end-char (parse-bracket-char state)))
-    (unless end-char
-      (error "Синтаксическая ошибка: незакрытый символьный класс в позиции ~A"
-             (parser-state-index state))
+  (let ((end-token (parse-bracket-token state builtin-char-class-mode)))
+    (unless (characterp end-token)
+      (error "Синтаксическая ошибка: встроенный класс не может быть границей диапазона в позиции ~A"
+             (parser-state-index state)
+      )
     )
-    (when (> (char-code start-char) (char-code end-char))
+    (when (> (char-code start-char) (char-code end-token))
       (error "Синтаксическая ошибка: неверный порядок диапазона ('~A'-'~A') в позиции ~A"
-             start-char end-char (parser-state-index state))
+             start-char end-token (parser-state-index state)
+      )
     )
-    (cons start-char end-char)
+    (cons start-char end-token)
   )
 )
 
@@ -84,22 +113,29 @@
            (eql (parser-peek state) #\])))
 )
 
-;; Считывает один элемент внутри [...]: литеральный дефис, диапазон или одиночный символ
-(defun parse-bracket-element (state ranges)
+;; Считывает один элемент внутри [...]: возвращает либо пара-конс (start . end),
+;; либо список пар-консов (для встроенного спецкласса)
+(defun parse-bracket-element (state ranges builtin-char-class-mode)
   (let ((cur (parser-peek state)))
     (if (hyphen-literal-p cur ranges state)
-      (progn
-        (parser-next state)
-        (cons #\- #\-))
-      ;; Не литеральный дефис
-      (let ((start-char (parse-bracket-char state)))
-        ;; Проверяем, идет ли следом '-' и не закрывается ли сразу класс ']'
-        (if (and (eql (parser-peek state) #\-)
-                  (not (eql (char-at-offset state 1) #\])))
-            (parse-bracket-range-end state start-char)
-            (cons start-char start-char)
+        (progn
+          (parser-next state)
+          (cons #\- #\-))
+        (let ((token (parse-bracket-token state builtin-char-class-mode)))
+          (cond
+            ((characterp token)
+             (if (and (eql (parser-peek state) #\-)
+                      (not (eql (char-at-offset state 1) #\])))
+                 (parse-bracket-range-end state token builtin-char-class-mode)
+                 (cons token token)))
+            ((listp token)
+             token)
+            (t
+             (error "Синтаксическая ошибка: некорректный элемент в позиции ~A"
+                    (parser-state-index state)
+             ))
+          )
         )
-      )
     )
   )
 )
@@ -115,7 +151,7 @@
 )
 
 ;; Главная функция: парсит скобочную группу [a-z0-9] или [^abc]
-(defun parse-bracket-char-class (state)
+(defun parse-bracket-char-class (state builtin-char-class-mode)
   (parser-next state) ; пропускаем '['
   (let ((negated (parser-match-p state #\^))
         (ranges nil))
@@ -123,13 +159,19 @@
       (let ((cur (parser-peek state)))
         (unless cur
           (error "Синтаксическая ошибка: незакрытый символьный класс '[' в позиции ~A"
-                 (parser-state-index state))
+                 (parser-state-index state)
+          )
         )
         (when (eql cur #\])
           (parser-next state) ; пропускаем ']'
-          (return)
+          (return))
+        (let ((element (parse-bracket-element state ranges builtin-char-class-mode)))
+          ;; Различаем список диапазонов от единичного cons-пара (start . end)
+          (if (and (listp element) (consp (car element)))
+              (setf ranges (nconc element ranges))
+              (push element ranges)
+          )
         )
-        (push (parse-bracket-element state ranges) ranges)
       )
     )
     (make-ast-char-class :ranges ranges :negated-p negated)

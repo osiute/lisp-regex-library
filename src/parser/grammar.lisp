@@ -41,7 +41,7 @@
 
       ;; Символьные классы [...]
       ((eql cur #\[)
-       (parse-bracket-char-class state))
+       (parse-bracket-char-class state builtin-char-class-mode))
 
       ;; Экранирование \d, \w, \s или экранированный литерал
       ((eql cur #\\)

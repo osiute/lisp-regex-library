@@ -31,7 +31,8 @@
 ;; Диапазоны внутри класса сохраняются в исходном порядке.
 (defun test-bracket-char-class-ranges (assert-equal-fn)
   (let ((node (parse-bracket-char-class
-               (make-parser-state :str "[a-z0-9]" :len 8))))
+               (make-parser-state :str "[a-z0-9]" :len 8)
+               :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
              '((#\0 . #\9) (#\a . #\z))
              "парсинг диапазонов a-z и 0-9")
@@ -41,7 +42,8 @@
 ;; Символ '^' после '[' помечает класс как отрицательный.
 (defun test-negated-bracket-char-class (assert-equal-fn)
   (let ((node (parse-bracket-char-class
-               (make-parser-state :str "[^abc]" :len 6))))
+               (make-parser-state :str "[^abc]" :len 6)
+               :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
              '((#\c . #\c) (#\b . #\b) (#\a . #\a))
              "парсинг отдельных символов a, b, c")
@@ -51,21 +53,24 @@
 ;; Дефис является литералом в начале/конце класса и после escape-последовательности.
 (defun test-literal-hyphens-in-bracket-class (assert-equal-fn)
   (let ((node (parse-bracket-char-class
-               (make-parser-state :str "[a\\-z]" :len 6))))
+               (make-parser-state :str "[a\\-z]" :len 6)
+               :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
              '((#\z . #\z) (#\- . #\-) (#\a . #\a))
              "экранированный дефис воспринимается как три отдельных символа")
     (funcall assert-equal-fn (ast-char-class-negated-p node)
              nil "обычный класс без отрицания"))
   (let ((node (parse-bracket-char-class
-               (make-parser-state :str "[-az]" :len 5))))
+               (make-parser-state :str "[-az]" :len 5)
+               :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
              '((#\z . #\z) (#\a . #\a) (#\- . #\-))
              "дефис в начале класса разбирается как литерал '-'")
     (funcall assert-equal-fn (ast-char-class-negated-p node)
              nil "обычный класс без отрицания"))
   (let ((node (parse-bracket-char-class
-               (make-parser-state :str "[az-]" :len 5))))
+               (make-parser-state :str "[az-]" :len 5)
+               :ascii)))
     (funcall assert-equal-fn (ast-char-class-ranges node)
              '((#\- . #\-) (#\z . #\z) (#\a . #\a))
              "дефис в конце класса разбирается как литерал '-'")
@@ -76,11 +81,13 @@
 (defun test-char-class-errors (assert-error-fn)
   (funcall assert-error-fn
            (lambda () (parse-bracket-char-class
-                       (make-parser-state :str "[z-a]" :len 5)))
+                       (make-parser-state :str "[z-a]" :len 5)
+                       :ascii))
            "ошибка: перевернутый диапазон [z-a]")
   (funcall assert-error-fn
            (lambda () (parse-bracket-char-class
-                       (make-parser-state :str "[a-z" :len 4)))
+                       (make-parser-state :str "[a-z" :len 4)
+                       :ascii))
            "ошибка: незакрытая квадратная скобка [a-z")
   (funcall assert-error-fn
            (lambda () (parse-escape-char-class
