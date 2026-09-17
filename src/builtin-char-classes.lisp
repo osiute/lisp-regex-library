@@ -61,26 +61,30 @@
 (declaim (inline unicode-word-char-p
                  unicode-digit-char-p
                  unicode-space-char-p
+                 ascii-word-char-p
+                 ascii-not-word-char-p
+                 ascii-not-digit-char-p
+                 ascii-not-space-char-p
+                 unicode-not-word-char-p
+                 unicode-not-digit-char-p
+                 unicode-not-space-char-p
+                 char-newline-p
                  get-ascii-w-complement-ranges
                  get-ascii-d-complement-ranges
                  get-ascii-s-complement-ranges
                  get-builtin-char-class-ranges-positive
                  get-builtin-char-class-ranges-complement
-                 get-builtin-char-class-ranges
-                 ascii-word-char-p
-                 char-newline-p
-                 word-char-p
-                 builtin-digit-char-p
-                 builtin-space-char-p))
+                 get-builtin-char-class-ranges))
 
 ;; --------------------------------------------------------------------------
 ;; Генератор и кэширование диапазонов
 ;; --------------------------------------------------------------------------
 
-;; Генератор диапазонов (start . end) для заданного предиката
-(defun generate-char-ranges (predicate-fn)
+;; Генератор диапазонов (start . end) для заданного предиката.
+;; При необходимости можно ограничить верхнюю границу диапазона через LIMIT.
+(defun generate-char-ranges (predicate-fn &optional (limit char-code-limit))
   (let ((ranges nil) (start nil) (prev nil))
-    (dotimes (code char-code-limit)
+    (dotimes (code limit)
       (let* ((ch (code-char code))
              (match (and ch (funcall predicate-fn ch))))
         (cond
@@ -100,36 +104,14 @@
   )
 )
 
-(defun complement-char-ranges (ranges &optional (limit char-code-limit))
-  (let ((result nil)
-        (current 0)
-        (limit-1 (1- limit)))
-    (dolist (range ranges)
-      (let* ((start (min (char-code (car range)) limit-1))
-             (end (min (char-code (cdr range)) limit-1)))
-        (when (> start current)
-          (push (cons (code-char current)
-                      (code-char (1- start)))
-                result))
-        (setf current (max current (1+ end)))
-      )
-    )
-    (when (< current limit)
-      (push (cons (code-char current)
-                  (code-char (1- limit)))
-            result))
-    (nreverse result)
-  )
-)
-
 (defun get-ascii-w-complement-ranges ()
-  (complement-char-ranges +ascii-w-ranges+ 128))
+  (generate-char-ranges #'ascii-not-word-char-p 128))
 
 (defun get-ascii-d-complement-ranges ()
-  (complement-char-ranges +ascii-d-ranges+ 128))
+  (generate-char-ranges #'ascii-not-digit-char-p 128))
 
 (defun get-ascii-s-complement-ranges ()
-  (complement-char-ranges +ascii-s-ranges+ 128))
+  (generate-char-ranges #'ascii-not-space-char-p 128))
 
 ;; Возвращает кэшированный список Unicode-диапазонов для \w
 (defun get-unicode-w-ranges ()
@@ -162,7 +144,7 @@
   (or
     *unicode-w-complement-ranges*
     (setf *unicode-w-complement-ranges*
-          (complement-char-ranges (get-unicode-w-ranges)))
+          (generate-char-ranges #'unicode-not-word-char-p))
   )
 )
 
@@ -170,7 +152,7 @@
   (or
     *unicode-d-complement-ranges*
     (setf *unicode-d-complement-ranges*
-          (complement-char-ranges (get-unicode-d-ranges)))
+          (generate-char-ranges #'unicode-not-digit-char-p))
   )
 )
 
@@ -178,17 +160,13 @@
   (or
     *unicode-s-complement-ranges*
     (setf *unicode-s-complement-ranges*
-          (complement-char-ranges (get-unicode-s-ranges)))
+          (generate-char-ranges #'unicode-not-space-char-p))
   )
 )
 
 ;; --------------------------------------------------------------------------
 ;; Главная функция получения диапазонов для парсера
 ;; --------------------------------------------------------------------------
-
-(declaim (inline get-builtin-char-class-ranges-positive
-                 get-builtin-char-class-ranges-complement
-                 get-builtin-char-class-ranges))
 
 (defun get-builtin-char-class-ranges-positive (ch char-mode)
   (case ch
@@ -276,6 +254,24 @@
     (char= ch #\_)
   )
 )
+
+(defun ascii-not-word-char-p (ch)
+  (not (ascii-word-char-p ch)))
+
+(defun ascii-not-digit-char-p (ch)
+  (not (char<= #\0 ch #\9)))
+
+(defun ascii-not-space-char-p (ch)
+  (not (member ch '(#\Space #\Tab #\Page #\Newline #\Return))))
+
+(defun unicode-not-word-char-p (ch)
+  (not (unicode-word-char-p ch)))
+
+(defun unicode-not-digit-char-p (ch)
+  (not (unicode-digit-char-p ch)))
+
+(defun unicode-not-space-char-p (ch)
+  (not (unicode-space-char-p ch)))
 
 (defun char-newline-p (ch)
   (or (char= ch #\Newline)
